@@ -20,6 +20,8 @@ export default function Navbar({
   selectedMenuItem,
   setSelectedMenuItem,
 }: NavbarProps) {
+  if (eventsData || selectedMenuItem) {
+  }
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(
     null
   );
