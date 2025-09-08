@@ -10,7 +10,6 @@ export default function App() {
   const [eventsData, setEventsData] = useState<any[]>([]);
   const [menuItems, setMenuItems] = useState<any>([]);
   const [selectedMenuItem, setSelectedMenuItem] = useState<any>({});
-  const [showAll, setShowAll] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(
     !!localStorage.getItem("token")
   );
@@ -30,24 +29,6 @@ export default function App() {
             path="/login"
             element={<Login setIsAuthenticated={setIsAuthenticated} />}
           />
-
-          {/* <Route
-            path="/"
-            element={
-              <ProtectedRoute isAuthenticated={isAuthenticated}>
-                <Home
-                  eventsData={eventsData}
-                  setEventsData={setEventsData}
-                  menuItems={menuItems}
-                  setMenuItems={setMenuItems}
-                  selectedMenuItem={selectedMenuItem}
-                  setSelectedMenuItem={setSelectedMenuItem}
-                  // setShowAll={setShowAll}
-                  // showAll={showAll}
-                />
-              </ProtectedRoute>
-            }
-          /> */}
 
           <Route
             path="/:slug?"

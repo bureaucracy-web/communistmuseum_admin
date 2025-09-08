@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import "./../assets/home/home.css";
-import { DataGrid, GridOverlay } from "@mui/x-data-grid";
+import { DataGrid } from "@mui/x-data-grid";
 import { makeStyles } from "@mui/styles";
 import viewImage from "../assets/home/veiw.png";
 import deleteImg from "../assets/home/delete.png";
@@ -44,7 +44,6 @@ export default function Home({
 }: MyProps) {
   const classes = useStyles();
   const navigate = useNavigate();
-  const didRun = useRef(false);
   const apiKey = import.meta.env.VITE_API_KEY;
   const apiEndpoint = import.meta.env.VITE_API_ENDPOINT;
   const apiEndpointForUrl = import.meta.env.VITE_API_ENDPOINT_FOR_URL;
@@ -76,6 +75,9 @@ export default function Home({
         return prev + 1;
       });
     }, 3000);
+
+    if (shapeTrigger) {
+    }
 
     return () => clearInterval(interval);
   }, []);
@@ -143,7 +145,8 @@ export default function Home({
     pdfImage?: File | null
   ) => {
     if (!id) return;
-
+    if (schedules) {
+    }
     const payload = new FormData();
 
     files.forEach((file) => payload.append("files", file));
@@ -156,7 +159,7 @@ export default function Home({
       body: payload,
     })
       .then((res) => res.json())
-      .then((updatedEvent) => {
+      .then(() => {
         getEventsByNavCategoryId(matchedItemId);
         setOpenModal(false);
       })
