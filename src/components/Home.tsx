@@ -436,19 +436,6 @@ export default function Home({
   return (
     <div>
       <div className="container editMode">
-        <div className="row mt-5">
-          <div className="col-sm-12">
-            {editMode ? (
-              <input
-                className="form-control"
-                value={draft.name}
-                onChange={(e) => handleChange("name", e.target.value)}
-              />
-            ) : (
-              <h2>{selectedMenuItem.name}</h2>
-            )}
-          </div>
-        </div>
         <div className="row mt-4">
           <div className="col-sm-6">
             {editMode ? (
