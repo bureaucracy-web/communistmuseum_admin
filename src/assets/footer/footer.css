@@ -1,5 +1,17 @@
 .footerContent {
   position: relative;
   z-index: 2;
-    font-family: "Courier Prime", monospace;
+  font-family: "Courier Prime", monospace;
+}
+.footerLeft {
+  margin-left: 50px;
+}
+@media (max-width: 991px) {
+  .footerBottom span {
+    display: block;
+    text-align: center !important;
+  }
+  .footerLeft {
+    margin-left: 0px;
+  }
 }

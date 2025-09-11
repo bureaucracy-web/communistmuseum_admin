@@ -125,7 +125,7 @@ export default function Navbar({
             navigate(`/`);
           }}
         >
-          COMMUNIST MUSEUM
+          COMUPA
         </Link>
         <button
           className="navbar-toggler"
@@ -147,11 +147,7 @@ export default function Navbar({
                 <button
                   onClick={() => {
                     getEventsByNavCategoryId(item.id);
-                    // navigate(
-                    //   `/${decodeURIComponent(item.name)
-                    //     .replace(/\s+/g, "_")
-                    //     .toLowerCase()}`
-                    // );
+
                     navigate(`/${item.name}`);
                   }}
                   className="nav-link"
