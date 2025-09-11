@@ -339,7 +339,7 @@ export default function Home({
             </span>
           );
         }
-        if (params.row.description_left) {
+        if (params.row.description_table_left) {
           return <span>{params.row.description_table_left}</span>;
         }
         return null;
