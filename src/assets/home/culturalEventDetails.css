@@ -47,7 +47,7 @@ h2 {
 
 /* Main content shifted */
 .event-main {
-  margin-left: 180px;
+  /* margin-left: 180px; */
   max-width: 1050px;
 }
 .lineBetween {
