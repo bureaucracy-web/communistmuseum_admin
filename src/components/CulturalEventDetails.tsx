@@ -15,7 +15,6 @@ type Media = {
 
 export default function CulturalEventDetails() {
   const location = useLocation();
-  const currentPath = location.pathname.replace("/", "");
   const apiEndpointForUrl = import.meta.env.VITE_API_ENDPOINT_FOR_URL;
   const apiKey = import.meta.env.VITE_API_KEY;
   const apiEndpoint = import.meta.env.VITE_API_ENDPOINT;
@@ -106,9 +105,6 @@ export default function CulturalEventDetails() {
     return { photos, videos, docs, audios };
   }, [media, heroPhoto]);
 
-  function scrollTo(section: string) {
-    refs[section]?.current?.scrollIntoView({ behavior: "smooth" });
-  }
 
   function MetaPair({
     label,
