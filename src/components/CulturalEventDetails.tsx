@@ -15,6 +15,7 @@ type Media = {
 
 export default function CulturalEventDetails() {
   const location = useLocation();
+  const currentPath = location.pathname.replace("/", "");
   const apiEndpointForUrl = import.meta.env.VITE_API_ENDPOINT_FOR_URL;
   const apiKey = import.meta.env.VITE_API_KEY;
   const apiEndpoint = import.meta.env.VITE_API_ENDPOINT;
@@ -46,6 +47,7 @@ export default function CulturalEventDetails() {
   const id = Number(queryParams.get("id"));
 
   const [event, setEvent] = useState<any>(null);
+  const [phase, setPhase] = useState<any>(null);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(
     {}
   );
@@ -74,6 +76,7 @@ export default function CulturalEventDetails() {
       })
       .then((data) => {
         setEvent(data.data);
+        setPhase(data.data.navigationCategory.name);
       })
       .catch((err) => console.error("Error fetching events:", err));
   }
@@ -274,7 +277,7 @@ export default function CulturalEventDetails() {
   return (
     <div className="event-layout">
       {/* FIXED LEFT MENU */}
-      <aside className="sidebar">
+      {/* <aside className="sidebar">
         <ul>
           <li onClick={() => scrollTo("info")}>Info</li>
           <li onClick={() => scrollTo("text")}>Text</li>
@@ -301,7 +304,7 @@ export default function CulturalEventDetails() {
             ""
           )}
         </ul>
-      </aside>
+      </aside> */}
 
       {/* MAIN CONTENT */}
       <div className="event-main mt-5">
@@ -339,6 +342,10 @@ export default function CulturalEventDetails() {
               )}
             </h3>
           )}
+
+          <div className="hero mt-5">
+            <h3>DOCUMENTS FROM {phase}</h3>
+          </div>
 
           {(event?.title_left || event?.title_right) && (
             <h5 className="event-title container">
@@ -452,7 +459,6 @@ export default function CulturalEventDetails() {
         {/* LONG TEXTS */}
         {(event?.about_left || event?.about_right) && (
           <section className="section">
-            <h3>About</h3>
             {event.about_right && (
               <div className="desc rtl" dir="rtl">
                 {event.about_right}
@@ -464,22 +470,24 @@ export default function CulturalEventDetails() {
 
         {(event?.description_left || event?.description_right) && (
           <section ref={refs.text} className="section">
-            <h3>Description</h3>
-
             {event.description_right && (
-              <div className="desc rtl" dir="rtl">
-                {event.description_right}
-              </div>
+              <div
+                className="desc rtl"
+                dir="rtl"
+                dangerouslySetInnerHTML={{ __html: event.description_right }}
+              />
             )}
             {event.description_left && (
-              <div className="desc">{event.description_left}</div>
+              <div
+                className="desc"
+                dangerouslySetInnerHTML={{ __html: event.description_left }}
+              />
             )}
           </section>
         )}
 
         {(event?.additionalNotes_left || event?.additionalNotes_right) && (
           <section className="section">
-            <h3>Notes</h3>
             {event.additionalNotes_right && (
               <div className="desc rtl" dir="rtl">
                 {event.additionalNotes_right}
@@ -507,20 +515,35 @@ export default function CulturalEventDetails() {
         {/* PROCESS */}
         {event?.schedules?.length ? (
           <section ref={refs.process} className="section">
-            <h3>Process</h3>
             {event.schedules.map((sch: any, i: number) => {
               const parts: string[] = [];
 
-              if (sch.month !== null && sch.dayOfMonth !== null) {
-                parts.push(`${month[sch.month - 1]}-${sch.dayOfMonth}`);
+              // Day + Month + Year
+              let datePart = "";
+              if (sch.dayOfMonth !== null) {
+                datePart += sch.dayOfMonth + " ";
+              }
+              if (sch.month !== null) {
+                datePart += month[sch.month - 1] + " ";
+              }
+              if (sch.year !== null) {
+                datePart += sch.year;
+              }
+              if (datePart) {
+                parts.push(datePart.trim());
               }
 
+              // Weekday
               if (sch.dayOfWeek !== null) {
                 parts.push(weekdays[sch.dayOfWeek - 1]);
               }
 
+              // Time interval
               if (sch.startTime && sch.endTime) {
-                parts.push(`${sch.startTime} - ${sch.endTime}`);
+                const formatTime = (t: string) => t.slice(0, 5); // HH:mm
+                parts.push(
+                  `${formatTime(sch.startTime)} - ${formatTime(sch.endTime)}`
+                );
               }
 
               return <div key={i}>{parts.join(" / ")}</div>;
@@ -535,7 +558,6 @@ export default function CulturalEventDetails() {
           mediaBuckets.docs.length ||
           mediaBuckets.audios.length) > 0 ? (
           <section ref={refs.tools} className="section">
-            <h3>Attachments</h3>
             <FileGroup
               title="Videos"
               items={mediaBuckets.videos}
@@ -559,7 +581,6 @@ export default function CulturalEventDetails() {
         {/* MAP */}
         {position && (
           <section ref={refs.location} className="section">
-            <h3>Location</h3>
             <MapContainer
               center={position}
               zoom={13}

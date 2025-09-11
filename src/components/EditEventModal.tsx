@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import CloseIcon from "@mui/icons-material/Close";
+import { Editor } from "@tinymce/tinymce-react";
 
 type EditEventModalProps = {
   open: boolean;
@@ -49,7 +50,6 @@ export default function EditEventModal({
 
   useEffect(() => {
     if (row) {
-      
       setSelectedNavCategory(row.navigationCategory.name);
       setFormData(row);
       setSchedules(row.schedules || []);
@@ -124,6 +124,8 @@ export default function EditEventModal({
     "nameOrOrganizer_right",
     "title_left",
     "title_right",
+    "sub_title_left",
+    "sub_title_right",
     "about_left",
     "about_right",
     "category_left",
@@ -140,6 +142,8 @@ export default function EditEventModal({
     "longitude",
     "materialsMedium_left",
     "materialsMedium_right",
+    "description_table_left",
+    "description_table_right",
     "description_left",
     "description_right",
     "additionalNotes_left",
@@ -165,7 +169,7 @@ export default function EditEventModal({
           p: 4,
           bgcolor: "white",
           borderRadius: 2,
-          maxWidth: 880,
+          maxWidth: 1000,
           mx: "auto",
           mt: 10,
           maxHeight: "80vh",
@@ -174,16 +178,58 @@ export default function EditEventModal({
       >
         <h2>Edit Cultural Event</h2>
 
-        {editableFields.map((key) => (
-          <TextField
-            key={key}
-            fullWidth
-            margin="dense"
-            label={key}
-            value={formData[key] || ""}
-            onChange={(e) => handleChange(key, e.target.value)}
-          />
-        ))}
+        {editableFields.map((key) =>
+          key === "description_left" || key === "description_right" ? (
+            <Box key={key} mt={2}>
+              <label>{key}</label>
+              <Editor
+                apiKey="bdajbbugxu6j05xr99jbswp90otf44nmrpzeztosd69rese0"
+                onEditorChange={(content) => handleChange(key, content)}
+                value={formData[key]}
+                init={{
+                  height: 300,
+                  menubar: false,
+                  plugins: [
+                    "advlist",
+                    "autolink",
+                    "lists",
+                    "link",
+                    "image",
+                    "charmap",
+                    "preview",
+                    "anchor",
+                    "searchreplace",
+                    "visualblocks",
+                    "code",
+                    "fullscreen",
+                    "insertdatetime",
+                    "media",
+                    "table",
+                    "code",
+                    "help",
+                    "wordcount",
+                  ],
+                  toolbar:
+                    "undo redo | blocks | " +
+                    "bold italic forecolor | alignleft aligncenter " +
+                    "alignright alignjustify | bullist numlist outdent indent | " +
+                    "removeformat | help",
+                  content_style:
+                    "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
+                }}
+              />
+            </Box>
+          ) : (
+            <TextField
+              key={key}
+              fullWidth
+              margin="dense"
+              label={key}
+              value={formData[key] as string}
+              onChange={(e) => handleChange(key, e.target.value)}
+            />
+          )
+        )}
 
         {/* Navigation Category */}
         <FormControl fullWidth margin="dense">
@@ -476,6 +522,21 @@ export default function EditEventModal({
           {schedules.map((sch, i) => (
             <Box key={i} display="flex" gap={1} alignItems="center" mb={1}>
               <TextField
+                label="Year"
+                type="number"
+                className="shedul"
+                value={sch.year ?? ""}
+                onChange={(e) =>
+                  handleScheduleChange(
+                    i,
+                    "year",
+                    e.target.value === "" ? null : +e.target.value
+                  )
+                }
+                InputProps={{ inputProps: { min: 1900, max: 2100 } }}
+              />
+
+              <TextField
                 select
                 className="shedul"
                 label="Month"
@@ -488,7 +549,7 @@ export default function EditEventModal({
                   )
                 }
               >
-                <MenuItem value="">Select Month</MenuItem>
+                <MenuItem value="">None</MenuItem>
                 {[
                   { value: 1, label: "January" },
                   { value: 2, label: "February" },
@@ -521,7 +582,7 @@ export default function EditEventModal({
                   )
                 }
               >
-                <MenuItem value="">Select Day</MenuItem>
+                <MenuItem value="">None</MenuItem>
                 {Array.from({ length: 31 }, (_, idx) => (
                   <MenuItem key={idx + 1} value={idx + 1}>
                     {idx + 1}
@@ -541,7 +602,7 @@ export default function EditEventModal({
                   )
                 }
               >
-                <MenuItem value="">Select Day</MenuItem>
+                <MenuItem value="">None</MenuItem>
                 {[
                   { value: 1, label: "Monday" },
                   { value: 2, label: "Tuesday" },

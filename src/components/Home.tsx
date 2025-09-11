@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import "./../assets/home/home.css";
 import { DataGrid } from "@mui/x-data-grid";
 import { makeStyles } from "@mui/styles";
-import viewImage from "../assets/home/veiw.png";
 import deleteImg from "../assets/home/delete.png";
 import editImg from "../assets/home/edit.png";
 import { useNavigate } from "react-router-dom";
@@ -144,9 +143,16 @@ export default function Home({
     id?: number,
     pdfImage?: File | null
   ) => {
-    if (!id) return;
     if (schedules) {
+      schedules.forEach((item) => {
+        for (const key in item) {
+          if (item[key] === "" || item[key] === undefined) {
+            item[key] = null;
+          }
+        }
+      });
     }
+
     const payload = new FormData();
 
     files.forEach((file) => payload.append("files", file));
@@ -174,13 +180,47 @@ export default function Home({
       renderCell: (params: any) => {
         if (params.row.nameOrOrganizer_right) {
           return (
-            <span dir="rtl" style={{ textAlign: "right", display: "block" }}>
+            <a
+              style={{
+                direction: "rtl",
+                textAlign: "right",
+                color: "#1EAEDB",
+                textDecoration: "underline",
+                cursor: "pointer",
+                display: "block",
+              }}
+              href={`/details?id=${params.row.id}`}
+              onClick={(e) => {
+                e.preventDefault();
+                navigate(`/details?id=${params.row.id}`, {
+                  state: { detail: params.row.id },
+                });
+              }}
+            >
               {params.row.nameOrOrganizer_right}
-            </span>
+            </a>
           );
         }
         if (params.row.nameOrOrganizer_left) {
-          return <span>{params.row.nameOrOrganizer_left}</span>;
+          return (
+            <a
+              style={{
+                color: "#1EAEDB",
+                textDecoration: "underline",
+                cursor: "pointer",
+              }}
+              dir="rtl"
+              href={`/details?id=${params.row.id}`}
+              onClick={(e) => {
+                e.preventDefault();
+                navigate(`/details?id=${params.row.id}`, {
+                  state: { detail: params.row.id },
+                });
+              }}
+            >
+              {params.row.nameOrOrganizer_left}
+            </a>
+          );
         }
         return null;
       },
@@ -227,7 +267,8 @@ export default function Home({
         const schedule = params.row?.schedules?.[0];
         if (!schedule) return "";
 
-        const { dayOfMonth, dayOfWeek, month, startTime, endTime } = schedule;
+        const { dayOfMonth, dayOfWeek, month, year, startTime, endTime } =
+          schedule;
 
         const monthNames = [
           "January",
@@ -256,9 +297,19 @@ export default function Home({
 
         const parts: string[] = [];
 
-        // Month + Day
-        if (month !== null && dayOfMonth !== null) {
-          parts.push(`${monthNames[month - 1]}-${dayOfMonth}`);
+        // Day + Month + Year
+        let datePart = "";
+        if (dayOfMonth !== null) {
+          datePart += dayOfMonth + " ";
+        }
+        if (month !== null) {
+          datePart += monthNames[month - 1] + " ";
+        }
+        if (year !== null) {
+          datePart += year;
+        }
+        if (datePart) {
+          parts.push(datePart.trim());
         }
 
         // Weekday
@@ -268,26 +319,28 @@ export default function Home({
 
         // Time interval
         if (startTime && endTime) {
-          parts.push(`${startTime} - ${endTime}`);
+          const formatTime = (t: string) => t.slice(0, 5); // "HH:mm"
+          parts.push(`${formatTime(startTime)} - ${formatTime(endTime)}`);
         }
 
         return parts.join(" / ");
       },
     },
+
     {
       field: "description",
       headerName: "Description",
       flex: 1.5,
       renderCell: (params: any) => {
-        if (params.row.description_right) {
+        if (params.row.description_table_right) {
           return (
             <span dir="rtl" style={{ textAlign: "right", display: "block" }}>
-              {params.row.description_right}
+              {params.row.description_table_right}
             </span>
           );
         }
         if (params.row.description_left) {
-          return <span>{params.row.description_left}</span>;
+          return <span>{params.row.description_table_left}</span>;
         }
         return null;
       },
@@ -296,23 +349,11 @@ export default function Home({
     {
       field: "actions",
       headerName: "Actions",
-      flex: 0.7,
+      flex: 0.5,
       sortable: false,
       filterable: false,
       renderCell: (params: any) => (
         <div className="actions">
-          <img
-            className="memberView"
-            src={viewImage}
-            alt="view"
-            title="View"
-            onClick={() =>
-              navigate(`/details?id=${params.row.id}`, {
-                state: { detail: params.row.id },
-              })
-            }
-            style={{ cursor: "pointer" }}
-          />
           <img
             className="memberView"
             src={editImg}
@@ -419,6 +460,7 @@ export default function Home({
       console.error("Save error:", err);
     }
   };
+
   const handleSaveNewEvent = (payload: FormData) => {
     fetch(`${apiEndpoint}culturalEvent/create`, {
       method: "POST",
