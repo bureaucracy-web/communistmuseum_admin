@@ -1,3 +1,4 @@
+// src/components/EditEventModal.tsx
 import {
   Modal,
   Box,
@@ -14,19 +15,16 @@ import {
 import { useEffect, useState } from "react";
 import CloseIcon from "@mui/icons-material/Close";
 import { Editor } from "@tinymce/tinymce-react";
+import { handleUpdate } from "../utils/updateHandler";
 
 type EditEventModalProps = {
   open: boolean;
   onClose: () => void;
   row: any;
-  onSave: (
-    updatedRow: any,
-    files: File[],
-    schedules: any[],
-    id: number,
-    pdfImage?: File | null // ✅ make the 5th argument optional
-  ) => void;
+  onSave: (updatedRow: any) => void;
   menuItems: { id: number; name: string }[];
+  apiKey: string;
+  apiEndpoint: string;
 };
 
 export default function EditEventModal({
@@ -35,6 +33,8 @@ export default function EditEventModal({
   row,
   onSave,
   menuItems,
+  apiKey,
+  apiEndpoint,
 }: EditEventModalProps) {
   const [formData, setFormData] = useState<any>({});
   const [files, setFiles] = useState<File[]>([]);
@@ -43,20 +43,19 @@ export default function EditEventModal({
   const [languages, setLanguages] = useState<string[]>(["en"]);
   const [pdfImage, setPdfImage] = useState<File | null>(null);
   const [showError, setShowError] = useState(false);
-
   const [selectedNavCategory, setSelectedNavCategory] = useState<number | "">(
     row?.navigationCategory?.id || ""
   );
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (row) {
-      setSelectedNavCategory(row.navigationCategory.name);
+      setSelectedNavCategory(row.navigationCategory?.id || "");
       setFormData(row);
       setSchedules(row.schedules || []);
       setLanguages(
         row.languages && row.languages.length > 0 ? row.languages : ["en"]
       );
-      setSelectedNavCategory(row?.navigationCategory?.id || "");
     }
   }, [row]);
 
@@ -67,17 +66,13 @@ export default function EditEventModal({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
-
       setFiles((prev) => {
-        // vorpeszi nuyn file-n krknvox chi avelana
         const existingNames = prev.map((f) => f.name);
         const filtered = newFiles.filter(
           (f) => !existingNames.includes(f.name)
         );
         return [...prev, ...filtered];
       });
-
-      // reset input, vor nuyn file-n karana krknits avelacvi
       e.target.value = "";
     }
   };
@@ -103,18 +98,45 @@ export default function EditEventModal({
     setSchedules((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleSave = () => {
-    const combinedEvent = {
-      ...formData,
-      navigationCategory: { id: selectedNavCategory },
-      languages,
-      schedules,
-      filesToDelete,
-      latitude: formData.latitude ? parseFloat(formData.latitude) : null,
-      longitude: formData.longitude ? parseFloat(formData.longitude) : null,
-    };
+  const handleSave = async () => {
+    if (!selectedNavCategory) {
+      setShowError(true);
+      return;
+    }
 
-    onSave(combinedEvent, files, schedules, formData.id, pdfImage);
+    setIsSaving(true);
+
+    try {
+      const combinedEvent = {
+        ...formData,
+        navigationCategory: {
+          id: selectedNavCategory,
+        },
+        languages,
+        schedules,
+        filesToDelete,
+        latitude: formData.latitude ? parseFloat(formData.latitude) : null,
+        longitude: formData.longitude ? parseFloat(formData.longitude) : null,
+      };
+
+      const updatedData = await handleUpdate(
+        combinedEvent,
+        files,
+        schedules,
+        formData.id,
+        apiKey,
+        apiEndpoint,
+        pdfImage
+      );
+
+      onSave(updatedData);
+      onClose();
+    } catch (error) {
+      console.error("Error saving event:", error);
+      alert("Failed to save event. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (!row) return null;
@@ -151,17 +173,18 @@ export default function EditEventModal({
     "type",
     "keyword",
   ];
+
   const handlePdfImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     if (file.type.startsWith("image/")) {
       setPdfImage(file);
     } else {
       alert("Please select only image files (jpg, png, jpeg, webp, etc.)");
-      e.target.value = ""; // reset input
+      e.target.value = "";
     }
   };
+
   return (
     <Modal open={open} onClose={onClose}>
       <Box
@@ -177,7 +200,6 @@ export default function EditEventModal({
         }}
       >
         <h2>Edit Cultural Event</h2>
-
         {editableFields.map((key) =>
           key === "description_left" || key === "description_right" ? (
             <Box key={key} mt={2}>
@@ -185,7 +207,7 @@ export default function EditEventModal({
               <Editor
                 apiKey="bdajbbugxu6j05xr99jbswp90otf44nmrpzeztosd69rese0"
                 onEditorChange={(content) => handleChange(key, content)}
-                value={formData[key]}
+                value={formData[key] || ""}
                 init={{
                   height: 300,
                   menubar: false,
@@ -225,13 +247,12 @@ export default function EditEventModal({
               fullWidth
               margin="dense"
               label={key}
-              value={formData[key] as string}
+              value={(formData[key] as string) || ""}
               onChange={(e) => handleChange(key, e.target.value)}
             />
           )
         )}
 
-        {/* Navigation Category */}
         <FormControl fullWidth margin="dense">
           <InputLabel>Navigation Category</InputLabel>
           <Select
@@ -257,7 +278,6 @@ export default function EditEventModal({
           )}
         </FormControl>
 
-        {/* ✅ isShowInHome checkbox */}
         <FormControlLabel
           control={
             <Checkbox
@@ -268,12 +288,11 @@ export default function EditEventModal({
           label="Show in Home"
         />
 
-        {/* Existing files preview */}
         <Box mt={2} className="deleteModalIcon">
           <h4>Existing Media</h4>
           <Box display="flex" gap={1} flexWrap="wrap">
             {formData.mediaFiles
-              ?.slice() // copy array to avoid mutating state
+              ?.slice()
               .sort((a: any, b: any) => {
                 const order = [
                   "photo",
@@ -292,7 +311,6 @@ export default function EditEventModal({
                   file.url
                 }`;
                 const type = file.type;
-
                 const isImage = type === "photo";
                 const isVideo = type === "video";
                 const isAudio = type === "audio";
@@ -362,7 +380,6 @@ export default function EditEventModal({
                         </a>
                       </Box>
                     )}
-
                     <IconButton
                       size="small"
                       onClick={() => {
@@ -385,7 +402,9 @@ export default function EditEventModal({
                         right: 4,
                         backgroundColor: "rgba(255,255,255,0.7)",
                         zIndex: 10,
-                        "&:hover": { backgroundColor: "rgba(255,255,255,0.9)" },
+                        "&:hover": {
+                          backgroundColor: "rgba(255,255,255,0.9)",
+                        },
                       }}
                     >
                       <CloseIcon fontSize="small" />
@@ -398,7 +417,6 @@ export default function EditEventModal({
 
         <Box mt={2}>
           <h4>Upload Media</h4>
-          {/* hidden input + label */}
           <input
             id="file-upload"
             type="file"
@@ -411,8 +429,6 @@ export default function EditEventModal({
               Select Files
             </Button>
           </label>
-
-          {/* Preview uploaded files */}
           <Box className="upload" display="flex" gap={1} flexWrap="wrap" mt={1}>
             {files.map((file, idx) => {
               const url = URL.createObjectURL(file);
@@ -456,7 +472,6 @@ export default function EditEventModal({
                       <span>PDF</span>
                     </div>
                   )}
-
                   <IconButton
                     size="small"
                     onClick={() => removeFile(idx)}
@@ -469,6 +484,7 @@ export default function EditEventModal({
             })}
           </Box>
         </Box>
+
         {files.some((f) => f.type === "application/pdf") && (
           <Box mt={2}>
             <h4>Upload PDF Image (optional)</h4>
@@ -517,6 +533,7 @@ export default function EditEventModal({
             />
           ))}
         </Box>
+
         <Box mt={2}>
           <h4>Schedules</h4>
           {schedules.map((sch, i) => (
@@ -535,7 +552,6 @@ export default function EditEventModal({
                 }
                 InputProps={{ inputProps: { min: 1900, max: 2100 } }}
               />
-
               <TextField
                 select
                 className="shedul"
@@ -617,7 +633,6 @@ export default function EditEventModal({
                   </MenuItem>
                 ))}
               </TextField>
-
               <TextField
                 label="Start Time"
                 type="time"
@@ -643,9 +658,16 @@ export default function EditEventModal({
         </Box>
 
         <Box mt={2} display="flex" justifyContent="flex-end" gap={2}>
-          <Button onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSave} variant="contained" color="primary">
-            Save
+          <Button onClick={onClose} disabled={isSaving}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSave}
+            variant="contained"
+            color="primary"
+            disabled={isSaving}
+          >
+            {isSaving ? "Saving..." : "Save"}
           </Button>
         </Box>
       </Box>
