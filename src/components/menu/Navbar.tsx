@@ -23,6 +23,8 @@ export default function Navbar({
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(
     null
   );
+  if (eventsData || selectedMenuItem) {
+  }
   const navigate = useNavigate();
   const location = useLocation();
   const currentPath = location.pathname.replace("/", "");
