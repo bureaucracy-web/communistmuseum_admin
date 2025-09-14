@@ -7,8 +7,6 @@ import type { LatLngExpression } from "leaflet";
 import "./../assets/home/home.css";
 import "./../assets/culturalEvents/culturalEvents.css";
 import EditEventModal from "./EditEventModal";
-import editImg from "../assets/home/edit.png";
-import { handleUpdate } from "../utils/updateHandler";
 
 type Media = {
   id: number;
