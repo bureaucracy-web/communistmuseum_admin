@@ -5,6 +5,10 @@ import "leaflet/dist/leaflet.css";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import type { LatLngExpression } from "leaflet";
 import "./../assets/home/home.css";
+import "./../assets/culturalEvents/culturalEvents.css";
+import EditEventModal from "./EditEventModal";
+import editImg from "../assets/home/edit.png";
+import { handleUpdate } from "../utils/updateHandler";
 
 type Media = {
   id: number;
@@ -50,6 +54,8 @@ export default function CulturalEventDetails() {
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(
     {}
   );
+  const [openModal, setOpenModal] = useState(false);
+  const [menuItems, setMenuItems] = useState<any[]>([]);
 
   const refs: Record<string, any> = {
     info: useRef(null),
@@ -80,9 +86,29 @@ export default function CulturalEventDetails() {
       .catch((err) => console.error("Error fetching events:", err));
   }
 
+  function getMenuItems() {
+    fetch(`${apiEndpoint}navigationCategory/getAll`, {
+      headers: { accept: "*/*", "api-key": `${apiKey}` },
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        return res.json();
+      })
+      .then((data) => {
+        setMenuItems(data.data);
+      })
+      .catch((err) => console.error("Error fetching menu items:", err));
+  }
+
   useEffect(() => {
     getEventsById(id);
-  }, []);
+    getMenuItems();
+  }, [id]);
+
+  const handleUpdateSuccess = (updatedData: any) => {
+    setEvent(updatedData);
+    setOpenModal(false);
+  };
 
   const media = (event?.mediaFiles || []) as Media[];
 
@@ -104,7 +130,6 @@ export default function CulturalEventDetails() {
     const docs = media.filter((m) => ["pdf", "word", "excel"].includes(m.type));
     return { photos, videos, docs, audios };
   }, [media, heroPhoto]);
-
 
   function MetaPair({
     label,
@@ -272,36 +297,6 @@ export default function CulturalEventDetails() {
 
   return (
     <div className="event-layout">
-      {/* FIXED LEFT MENU */}
-      {/* <aside className="sidebar">
-        <ul>
-          <li onClick={() => scrollTo("info")}>Info</li>
-          <li onClick={() => scrollTo("text")}>Text</li>
-          {mediaBuckets.photos?.length ? (
-            <li onClick={() => scrollTo("images")}>Images</li>
-          ) : (
-            ""
-          )}
-          {event?.schedules?.length ? (
-            <li onClick={() => scrollTo("process")}>Process</li>
-          ) : (
-            ""
-          )}
-          {(mediaBuckets.videos.length ||
-            mediaBuckets.docs.length ||
-            mediaBuckets.audios.length) > 0 ? (
-            <li onClick={() => scrollTo("tools")}>Attachments</li>
-          ) : (
-            ""
-          )}
-          {position ? (
-            <li onClick={() => scrollTo("location")}>Location</li>
-          ) : (
-            ""
-          )}
-        </ul>
-      </aside> */}
-
       {/* MAIN CONTENT */}
       <div className="event-main mt-5">
         {/* NAME */}
@@ -339,8 +334,17 @@ export default function CulturalEventDetails() {
             </h3>
           )}
 
-          <div className="hero mt-5">
-            <h3>DOCUMENTS FROM {phase}</h3>
+          <div className="cr1 mt-5">
+            <div className="hero ">
+              <h3>DOCUMENTS FROM {phase}</h3>
+            </div>
+            {/* EDIT BUTTON */}
+            <div>
+              <button type="button" onClick={() => setOpenModal(true)}>
+                Edit Event
+              </button>
+         
+            </div>
           </div>
 
           {(event?.title_left || event?.title_right) && (
@@ -592,6 +596,17 @@ export default function CulturalEventDetails() {
           </section>
         )}
       </div>
+
+      {/* EDIT MODAL */}
+      <EditEventModal
+        open={openModal}
+        onClose={() => setOpenModal(false)}
+        row={event}
+        onSave={handleUpdateSuccess}
+        menuItems={menuItems}
+        apiKey={apiKey}
+        apiEndpoint={apiEndpoint}
+      />
     </div>
   );
 }

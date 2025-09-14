@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Collapse } from "bootstrap";
 import "../../assets/menu/layout.css";
-import { useLocation } from "react-router-dom";
 
 type NavbarProps = {
   eventsData: any[];
@@ -20,8 +20,6 @@ export default function Navbar({
   selectedMenuItem,
   setSelectedMenuItem,
 }: NavbarProps) {
-  if (eventsData || selectedMenuItem) {
-  }
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(
     null
   );
@@ -78,15 +76,12 @@ export default function Navbar({
     }
   }, []);
 
-  // Default selection after menuItems loaded
   useEffect(() => {
     if (menuItems.length > 0 && selectedCategoryId === null) {
       const decodedPath = decodeURIComponent(currentPath).toLowerCase().trim();
-
       const matchedItem = menuItems.find(
         (item: any) => item.name.toLowerCase().trim() === decodedPath
       );
-
       if (matchedItem) {
         getEventsByNavCategoryId(matchedItem.id);
         setSelectedMenuItem(matchedItem);
@@ -94,12 +89,33 @@ export default function Navbar({
         const defaultCategory =
           menuItems.find((item: any) => item.name.toLowerCase() === "home") ||
           menuItems[0];
-
         getEventsByNavCategoryId(defaultCategory.id);
         setSelectedMenuItem(defaultCategory);
       }
     }
   }, [menuItems, currentPath]);
+
+  function toggleNavbar() {
+    const navbar = document.getElementById("navbarNav");
+    if (navbar) {
+      const bsCollapse =
+        Collapse.getInstance(navbar) || new Collapse(navbar, { toggle: false });
+      if (navbar.classList.contains("show")) {
+        bsCollapse.hide(); // bacvac e → pakum enq
+      } else {
+        bsCollapse.show(); // pakvac e → bacum enq
+      }
+    }
+  }
+
+  function closeNavbar() {
+    const navbar = document.getElementById("navbarNav");
+    if (navbar) {
+      const bsCollapse =
+        Collapse.getInstance(navbar) || new Collapse(navbar, { toggle: false });
+      bsCollapse.hide();
+    }
+  }
 
   if (!menuItems.length) {
     return (
@@ -113,7 +129,7 @@ export default function Navbar({
     <nav className="navbar navbar-expand-lg navbar-white bg-white menuNavbar">
       <div className="container" id="containerProxy">
         <Link
-          className="navbar-brand "
+          className="navbar-brand"
           id="brend"
           to="/"
           onClick={() => {
@@ -123,6 +139,7 @@ export default function Navbar({
             getEventsByNavCategoryId(homeItem.id);
             setSelectedMenuItem(homeItem);
             navigate(`/`);
+            closeNavbar();
           }}
         >
           COMUPA
@@ -130,8 +147,7 @@ export default function Navbar({
         <button
           className="navbar-toggler"
           type="button"
-          data-bs-toggle="collapse"
-          data-bs-target="#navbarNav"
+          onClick={toggleNavbar} // ← sa stexcum e toggle logic
         >
           <span className="navbar-toggler-icon"></span>
         </button>
@@ -143,17 +159,15 @@ export default function Navbar({
                 className={`nav-item ${
                   selectedCategoryId === item.id ? "active" : ""
                 }`}
+                onClick={() => {
+                  getEventsByNavCategoryId(item.id);
+                  navigate(`/${item.name}`);
+                  closeNavbar();
+                }}
               >
-                <button
-                  onClick={() => {
-                    getEventsByNavCategoryId(item.id);
-
-                    navigate(`/${item.name}`);
-                  }}
-                  className="nav-link"
-                >
+                <span className="nav-link" style={{ cursor: "pointer" }}>
                   {item.name.toUpperCase()}
-                </button>
+                </span>
               </li>
             ))}
           </ul>

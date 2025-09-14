@@ -4,11 +4,11 @@ import { DataGrid } from "@mui/x-data-grid";
 import { makeStyles } from "@mui/styles";
 import deleteImg from "../assets/home/delete.png";
 import editImg from "../assets/home/edit.png";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import EditEventModal from "./EditEventModal";
 import AddEventModal from "./AddEventModal";
-import { useLocation } from "react-router-dom";
 import Swal from "sweetalert2";
+import { handleUpdate as updateEvent } from "../utils/updateHandler";
 
 type MyProps = {
   eventsData: any[];
@@ -21,15 +21,9 @@ type MyProps = {
 
 const useStyles = makeStyles({
   dataGrid: {
-    "& .MuiDataGrid-cell": {
-      padding: "0 10px 0 32px !important",
-    },
-    "& .MuiDataGrid-columnHeader": {
-      padding: "0 10px 0 32px !important",
-    },
-    "& .MuiDataGrid-menuIcon": {
-      color: "black !important",
-    },
+    "& .MuiDataGrid-cell": { padding: "0 10px 0 32px !important" },
+    "& .MuiDataGrid-columnHeader": { padding: "0 10px 0 32px !important" },
+    "& .MuiDataGrid-menuIcon": { color: "black !important" },
   },
 });
 
@@ -43,17 +37,16 @@ export default function Home({
 }: MyProps) {
   const classes = useStyles();
   const navigate = useNavigate();
+  const location = useLocation();
+
   const apiKey = import.meta.env.VITE_API_KEY;
   const apiEndpoint = import.meta.env.VITE_API_ENDPOINT;
   const apiEndpointForUrl = import.meta.env.VITE_API_ENDPOINT_FOR_URL;
-  const location = useLocation();
-  const currentPath = location.pathname.replace("/", "");
 
   const [paginationModel, setPaginationModel] = useState({
     page: 0,
     pageSize: 100,
   });
-
   const [openModal, setOpenModal] = useState(false);
   const [selectedRow, setSelectedRow] = useState<any>(null);
   const [editMode, setEditMode] = useState(false);
@@ -62,34 +55,56 @@ export default function Home({
   const [showAll, setShowAll] = useState(false);
   const [matchedItemId, setMatchedItemId] = useState(1);
 
-  const [shapeTrigger, setShapeTrigger] = useState(0);
+  const currentPath = location.pathname.replace("/", "");
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setShapeTrigger((prev) => {
-        if (prev >= 5) {
-          clearInterval(interval);
-          return prev;
-        }
-        return prev + 1;
-      });
-    }, 3000);
+  const handleUpdate = async (
+    combinedEvent: any,
+    files: File[],
+    schedules: any[],
+    id?: number,
+    pdfImage?: File | null
+  ) => {
+    if (!id) return;
 
-    if (shapeTrigger) {
+    try {
+      await updateEvent(
+        combinedEvent,
+        files,
+        schedules,
+        id,
+        apiKey,
+        apiEndpoint,
+        pdfImage
+      );
+      getEventsByNavCategoryId(matchedItemId);
+      setOpenModal(false);
+    } catch (err) {
+      console.error("Update error:", err);
     }
+  };
 
-    return () => clearInterval(interval);
-  }, []);
+  const handleOpenModal = (row: any) => {
+    setSelectedRow(row);
+    setOpenModal(true);
+  };
+  const handleCloseModal = () => setOpenModal(false);
+
+  // 🔄 Menu → matchedItemId
+  useEffect(() => {
+    if (menuItems.length > 0) {
+      const decodedPath = decodeURIComponent(currentPath).toLowerCase().trim();
+      const matchedItem = menuItems.find(
+        (item: any) => item.name.toLowerCase().trim() === decodedPath
+      );
+      if (matchedItem) setMatchedItemId(matchedItem.id);
+    }
+  }, [menuItems, currentPath]);
 
   const getRandomShape = () => {
     const shapes = ["circle", "square", "rectangle", "triangle"] as const;
     return shapes[Math.floor(Math.random() * shapes.length)];
   };
-  const handleOpenModal = (row: any) => {
-    setSelectedRow(row);
-    setOpenModal(true);
-  };
-
+  // 🗑 Delete event
   const handleDelete = (id: number) => {
     Swal.fire({
       text: "The event will be permanently deleted. Are you sure you want to proceed?",
@@ -100,26 +115,20 @@ export default function Home({
       confirmButtonText: "Yes, delete it!",
     }).then(async (result) => {
       if (result.isConfirmed) {
-        fetch(`${apiEndpoint}culturalEvent/${id}`, {
-          method: "DELETE",
-          headers: { "api-key": apiKey },
-        })
-          .then((res) => {
-            if (!res.ok) {
-              throw new Error("Failed to delete");
-            }
-            return res.json();
-          })
-          .then(() => {
-            setEventsData((prev) => prev.filter((row) => row.id !== id));
-            getEventsByNavCategoryId(matchedItemId);
-          })
-          .catch((err) => console.error("Delete error:", err));
+        try {
+          const res = await fetch(`${apiEndpoint}culturalEvent/${id}`, {
+            method: "DELETE",
+            headers: { "api-key": apiKey },
+          });
+          if (!res.ok) throw new Error("Failed to delete");
+          setEventsData((prev) => prev.filter((row) => row.id !== id));
+          getEventsByNavCategoryId(matchedItemId);
+        } catch (err) {
+          console.error("Delete error:", err);
+        }
       }
     });
   };
-
-  const handleCloseModal = () => setOpenModal(false);
 
   useEffect(() => {
     if (menuItems.length > 0) {
@@ -135,42 +144,6 @@ export default function Home({
       setMatchedItemId(matchedItem.id);
     }
   }, [menuItems, currentPath]);
-
-  const handleUpdate = (
-    combinedEvent: any,
-    files: File[],
-    schedules: any[],
-    id?: number,
-    pdfImage?: File | null
-  ) => {
-    if (schedules) {
-      schedules.forEach((item) => {
-        for (const key in item) {
-          if (item[key] === "" || item[key] === undefined) {
-            item[key] = null;
-          }
-        }
-      });
-    }
-
-    const payload = new FormData();
-
-    files.forEach((file) => payload.append("files", file));
-    if (pdfImage) payload.append("pdfImage", pdfImage);
-    payload.append("dto", JSON.stringify(combinedEvent));
-
-    fetch(`${apiEndpoint}culturalEvent/update/${id}?replaceOldFile=true`, {
-      method: "PUT",
-      headers: { "api-key": apiKey },
-      body: payload,
-    })
-      .then((res) => res.json())
-      .then(() => {
-        getEventsByNavCategoryId(matchedItemId);
-        setOpenModal(false);
-      })
-      .catch((err) => console.error("Update error:", err));
-  };
 
   const columns = [
     {
@@ -830,8 +803,18 @@ export default function Home({
         open={openModal}
         onClose={handleCloseModal}
         row={selectedRow}
-        onSave={handleUpdate}
+        onSave={(updatedRow: any) => {
+          handleUpdate(
+            updatedRow,
+            updatedRow.files || [],
+            updatedRow.schedules || [],
+            updatedRow.id,
+            updatedRow.pdfImage || null
+          );
+        }}
         menuItems={menuItems}
+        apiKey={apiKey}
+        apiEndpoint={apiEndpoint}
       />
 
       <AddEventModal
