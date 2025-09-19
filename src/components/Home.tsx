@@ -645,7 +645,7 @@ export default function Home({
 
         {editMode ? (
           ""
-        ) : (
+        ) : selectedMenuItem?.relatedNavigationIds?.length > 0 ? (
           <div className="mt-2">
             <span>See works: </span>
             <div className="relateds">
@@ -672,6 +672,8 @@ export default function Home({
                   ))}
             </div>
           </div>
+        ) : (
+          ""
         )}
 
         {editMode && (
