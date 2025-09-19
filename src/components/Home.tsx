@@ -9,14 +9,23 @@ import EditEventModal from "./EditEventModal";
 import AddEventModal from "./AddEventModal";
 import Swal from "sweetalert2";
 import { handleUpdate as updateEvent } from "../utils/updateHandler";
+import search from "../assets/home/search.png";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import type { LatLngExpression } from "leaflet";
+import { FormControl, InputLabel, Select, MenuItem } from "@mui/material";
 
 type MyProps = {
   eventsData: any[];
   menuItems: any[];
   selectedMenuItem: any;
+  loading: any;
+  query: any;
   setEventsData: React.Dispatch<React.SetStateAction<any[]>>;
   setMenuItems: React.Dispatch<React.SetStateAction<any[]>>;
   setSelectedMenuItem: React.Dispatch<React.SetStateAction<any>>;
+  setIsColl: React.Dispatch<React.SetStateAction<any>>;
+  setSelectedCategoryId: React.Dispatch<React.SetStateAction<any>>;
+  setQuery: React.Dispatch<React.SetStateAction<any>>;
 };
 
 const useStyles = makeStyles({
@@ -34,6 +43,11 @@ export default function Home({
   selectedMenuItem,
   setMenuItems: _setMenuItems,
   setSelectedMenuItem: _setSelectedMenuItem,
+  setIsColl: setIsColl,
+  loading,
+  setSelectedCategoryId,
+  query,
+  setQuery,
 }: MyProps) {
   const classes = useStyles();
   const navigate = useNavigate();
@@ -45,8 +59,9 @@ export default function Home({
 
   const [paginationModel, setPaginationModel] = useState({
     page: 0,
-    pageSize: 100,
+    pageSize: 10,
   });
+
   const [openModal, setOpenModal] = useState(false);
   const [selectedRow, setSelectedRow] = useState<any>(null);
   const [editMode, setEditMode] = useState(false);
@@ -89,7 +104,6 @@ export default function Home({
   };
   const handleCloseModal = () => setOpenModal(false);
 
-  // 🔄 Menu → matchedItemId
   useEffect(() => {
     if (menuItems.length > 0) {
       const decodedPath = decodeURIComponent(currentPath).toLowerCase().trim();
@@ -400,7 +414,7 @@ export default function Home({
     setDraft(selectedMenuItem);
   }, [selectedMenuItem]);
 
-  const handleChange = (field: string, value: string) => {
+  const handleChange = (field: string, value: string | boolean | number[]) => {
     setDraft((prev: any) => ({ ...prev, [field]: value }));
   };
 
@@ -429,6 +443,7 @@ export default function Home({
 
       _setSelectedMenuItem(updated.data);
       setEditMode(false);
+      setIsColl(true);
     } catch (err) {
       console.error("Save error:", err);
     }
@@ -448,356 +463,742 @@ export default function Home({
       .catch((err) => console.error("Create error:", err));
   };
 
+  const handleSearch = () => {
+    const payload = { search_data: query };
+
+    fetch(
+      `${apiEndpoint}culturalEvent/getEventsBySearchAndNavId/${matchedItemId}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "api-key": apiKey,
+        },
+        body: JSON.stringify({ dto: payload }),
+      }
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        setEventsData(data.data);
+      })
+      .catch((err) => console.error("Create error:", err));
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
+  };
+
+  const center: LatLngExpression | null =
+    eventsData.length > 0 && eventsData[0].latitude && eventsData[0].longitude
+      ? [eventsData[0].latitude, eventsData[0].longitude]
+      : null;
+
+  if (!loading) {
+    return <></>;
+  }
   return (
     <div>
       <div className="container editMode">
-        <div className="row mt-4">
-          <div className="col-sm-6">
-            {editMode ? (
-              <input
-                className="form-control"
-                value={draft.header_left}
-                placeholder="Header left"
-                onChange={(e) => handleChange("header_left", e.target.value)}
-              />
-            ) : (
-              <h2>{selectedMenuItem.header_left}</h2>
-            )}
-          </div>
-          <div className="col-sm-6">
-            {editMode ? (
-              <input
-                className="form-control"
-                value={draft.header_right}
-                placeholder="Header right"
-                onChange={(e) => handleChange("header_right", e.target.value)}
-              />
-            ) : (
-              <h2 dir="rtl" style={{ textAlign: "right" }}>
-                {selectedMenuItem.header_right}
-              </h2>
-            )}
-          </div>
-        </div>
-        <div className="row mt-4">
-          <div className="col-sm-6">
-            {editMode ? (
-              <input
-                className="form-control"
-                value={draft.subHeader_left}
-                placeholder="Sub header left"
-                onChange={(e) => handleChange("subHeader_left", e.target.value)}
-              />
-            ) : (
-              <h2>{selectedMenuItem.subHeader_left}</h2>
-            )}
-          </div>
-          <div className="col-sm-6">
-            {editMode ? (
-              <input
-                className="form-control"
-                value={draft.subHeader_right}
-                placeholder="Sub header right"
-                onChange={(e) =>
-                  handleChange("subHeader_right", e.target.value)
-                }
-              />
-            ) : (
-              <h2 dir="rtl" style={{ textAlign: "right" }}>
-                {selectedMenuItem.subHeader_right}
-              </h2>
-            )}
-          </div>
-        </div>
-        <div className="row mt-4">
-          <div className="col-sm-6">
-            {editMode ? (
-              <input
-                className="form-control"
-                value={draft.title_left}
-                placeholder="Title left"
-                onChange={(e) => handleChange("title_left", e.target.value)}
-              />
-            ) : (
-              <h2>{selectedMenuItem.title_left}</h2>
-            )}
-          </div>
-          <div className="col-sm-6">
-            {editMode ? (
-              <input
-                className="form-control"
-                value={draft.title_right}
-                placeholder="Title right"
-                onChange={(e) => handleChange("title_right", e.target.value)}
-              />
-            ) : (
-              <h2 dir="rtl" style={{ textAlign: "right" }}>
-                {selectedMenuItem.title_right}
-              </h2>
-            )}
-          </div>
+        <div className="mt-3 searchDiv">
+          <input
+            className="search"
+            placeholder="Search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
+          />
+
+          <img
+            src={search}
+            alt="search"
+            style={{ cursor: "pointer" }}
+            onClick={handleSearch}
+          />
         </div>
 
-        <div className="row mt-4">
+        <div className="row mt-2">
           <div className="col-sm-12">
             {editMode ? (
-              <textarea
+              <input
                 className="form-control"
-                placeholder="Description left"
-                value={draft.description_left}
-                onChange={(e) =>
-                  handleChange("description_left", e.target.value)
-                }
+                value={draft.name}
+                placeholder="Category name"
+                onChange={(e) => handleChange("name", e.target.value)}
               />
             ) : (
-              <span style={{ display: "block" }}>
-                {selectedMenuItem.description_left}
-              </span>
+              ""
+            )}
+          </div>
+        </div>
+
+        {/* Boolean checkboxes */}
+        <div className="row mt-2">
+          <div className="col-sm-3">
+            {editMode ? (
+              <div className="form-check">
+                <input
+                  type="checkbox"
+                  className="form-check-input"
+                  checked={draft.isShowInNavbar}
+                  onChange={(e) =>
+                    handleChange("isShowInNavbar", e.target.checked)
+                  }
+                />
+                <label className="form-check-label">Show in Navbar</label>
+              </div>
+            ) : (
+              ""
             )}
           </div>
 
-          <div className="col-sm-12 mt-4">
+          <div className="col-sm-3">
             {editMode ? (
-              <textarea
-                className="form-control"
-                placeholder="Description Right"
-                value={draft.description_right}
-                onChange={(e) =>
-                  handleChange("description_right", e.target.value)
-                }
-              />
+              <div className="form-check">
+                <input
+                  type="checkbox"
+                  className="form-check-input"
+                  checked={draft.isBackground}
+                  onChange={(e) =>
+                    handleChange("isBackground", e.target.checked)
+                  }
+                />
+                <label className="form-check-label">Background</label>
+              </div>
             ) : (
-              <span dir="rtl" style={{ textAlign: "right", display: "block" }}>
-                {selectedMenuItem.description_right}
-              </span>
+              ""
+            )}
+          </div>
+
+          <div className="col-sm-3">
+            {editMode ? (
+              <div className="form-check">
+                <input
+                  type="checkbox"
+                  className="form-check-input"
+                  checked={draft.isShowInWorksPage}
+                  onChange={(e) =>
+                    handleChange("isShowInWorksPage", e.target.checked)
+                  }
+                />
+                <label className="form-check-label">Show in Works Page </label>
+              </div>
+            ) : (
+              ""
+            )}
+          </div>
+
+          <div className="col-sm-3">
+            {editMode ? (
+              <div className="form-check">
+                <input
+                  type="checkbox"
+                  className="form-check-input"
+                  checked={draft.isShowAllLocations}
+                  onChange={(e) =>
+                    handleChange("isShowAllLocations", e.target.checked)
+                  }
+                />
+                <label className="form-check-label">Show All Locations </label>
+              </div>
+            ) : (
+              ""
             )}
           </div>
         </div>
-      </div>
-      <div className="btns">
-        <div className="mt-3 ">
-          {!editMode ? (
-            <button className="btnStyles" onClick={() => setEditMode(true)}>
-              Edit Page
-            </button>
-          ) : (
-            <>
-              <button className="btn btn-success me-2" onClick={handleSave}>
-                Save
-              </button>
-              <button className="btn btn-secondary" onClick={handleCancel}>
-                Cancel
-              </button>
-            </>
-          )}
-        </div>
-        <div className=" mt-3">
-          <button className=" btnStyles" onClick={() => setOpenAddModal(true)}>
-            Add Event
-          </button>
-        </div>
-      </div>
-      <div className="container mt-4 ">
-        {selectedMenuItem.id == 1 ? (
-          <div>
-            <div>
-              {!showAll ? (
-                <button
-                  className="seeAllData"
-                  onClick={() => {
-                    setShowAll(true);
-                    getAllEvents();
-                  }}
-                >
-                  Show More
-                </button>
+
+        {editMode ||
+        selectedMenuItem.header_left ||
+        selectedMenuItem.header_right ? (
+          <div className="row mt-2">
+            <div className="col-sm-6">
+              {editMode ? (
+                <input
+                  className="form-control"
+                  value={draft.header_left}
+                  placeholder="Header left"
+                  onChange={(e) => handleChange("header_left", e.target.value)}
+                />
               ) : (
-                <button
-                  className="seeAllData"
-                  onClick={() => {
-                    setShowAll(false);
-                    getEventsForHome();
-                  }}
-                >
-                  Show less
-                </button>
+                <h2>{selectedMenuItem.header_left}</h2>
+              )}
+            </div>
+            <div className="col-sm-6">
+              {editMode ? (
+                <input
+                  className="form-control"
+                  value={draft.header_right}
+                  placeholder="Header right"
+                  onChange={(e) => handleChange("header_right", e.target.value)}
+                />
+              ) : (
+                <h2 dir="rtl" style={{ textAlign: "right" }}>
+                  {selectedMenuItem.header_right}
+                </h2>
               )}
             </div>
           </div>
         ) : (
           ""
         )}
-        {eventsData.length > 0 && matchedItemId !== 1 ? (
-          <div style={{ width: "100%", overflowX: "auto" }}>
-            <div style={{ minWidth: "800px" }}>
-              <DataGrid
-                className={`${classes.dataGrid} dataGrid mt-4`}
-                rows={eventsData}
-                columns={columns}
-                initialState={{
-                  pagination: { paginationModel: { page: 0, pageSize: 10 } },
-                }}
-                sx={{
-                  "& .MuiDataGrid-cell": {
-                    padding: "0 10px 0 15px !important",
+
+        {editMode ? (
+          ""
+        ) : (
+          <div className="mt-2">
+            <span>See works: </span>
+            <div className="relateds">
+              {selectedMenuItem.relatedNavigationIds &&
+                selectedMenuItem.relatedNavigationIds.length > 0 &&
+                menuItems
+                  .filter((item) =>
+                    selectedMenuItem.relatedNavigationIds.includes(item.id)
+                  )
+                  .map((item) => (
+                    <a
+                      key={item.id}
+                      href={`/${item.name}`}
+                      style={{
+                        cursor: "pointer",
+                        textDecoration: "underline",
+                        color: "#1EAEDB",
+                        display: "block",
+                        marginBottom: "5px",
+                      }}
+                    >
+                      {item.name}
+                    </a>
+                  ))}
+            </div>
+          </div>
+        )}
+
+        {editMode && (
+          <FormControl fullWidth margin="dense">
+            <InputLabel id="related-nav-label">Related Navigations</InputLabel>
+            <Select
+              labelId="related-nav-label"
+              multiple
+              value={draft.relatedNavigationIds || []}
+              onChange={(e) =>
+                handleChange("relatedNavigationIds", e.target.value as number[])
+              }
+              renderValue={(selected: number[]) =>
+                menuItems
+                  .filter((m) => selected.includes(m.id))
+                  .map((m) => m.name)
+                  .join(", ")
+              }
+              MenuProps={{
+                PaperProps: {
+                  style: {
+                    maxHeight: 38 * 5.5,
                   },
-                  "& .MuiDataGrid-columnHeader": {
-                    padding: "0 10px 0 20px !important",
-                  },
-                }}
-                pageSizeOptions={[10, 20, 30, 50]}
-                autoHeight
-                // slots={{
-                //   footer: CustomFooter,
-                //   noRowsOverlay: () => (
-                //     <GridOverlay>
-                //       <div style={{ textAlign: "center", padding: "20px" }}>
-                //         No data available in the table!
-                //       </div>
-                //     </GridOverlay>
-                //   ),
-                // }}
-                getRowClassName={getRowClassName}
-                paginationModel={paginationModel}
-                onPaginationModelChange={handlePaginationChange}
-              />
+                },
+              }}
+            >
+              {menuItems.map((item) => {
+                const isCurrentEditing = item.id === selectedMenuItem.id;
+                const isSelected = draft.relatedNavigationIds?.includes(
+                  item.id
+                );
+
+                return (
+                  <MenuItem
+                    key={item.id}
+                    value={item.id}
+                    disabled={isCurrentEditing}
+                    sx={{
+                      backgroundColor: isCurrentEditing
+                        ? "gray"
+                        : isSelected
+                        ? "green"
+                        : "transparent",
+                      color: isCurrentEditing || isSelected ? "white" : "black",
+                      fontWeight: isCurrentEditing ? "bold" : "normal",
+                      "&.Mui-selected": {
+                        backgroundColor: "green !important",
+                        color: "white",
+                      },
+                      "&.Mui-selected:hover": {
+                        backgroundColor: "darkgreen !important",
+                      },
+                    }}
+                  >
+                    {item.name}
+                  </MenuItem>
+                );
+              })}
+            </Select>
+          </FormControl>
+        )}
+
+        {editMode ? (
+          ""
+        ) : (
+          <div className="location">
+            {selectedMenuItem.isShowAllLocations && center && (
+              <section className="section">
+                <MapContainer
+                  center={center}
+                  zoom={5}
+                  className="leaflet-container"
+                >
+                  <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+
+                  {eventsData
+                    .filter((ev) => ev.latitude && ev.longitude)
+                    .map((ev) => (
+                      <Marker
+                        key={ev.id}
+                        position={
+                          [ev.latitude, ev.longitude] as LatLngExpression
+                        }
+                      >
+                        <Popup>
+                          <div style={{ maxWidth: "220px" }}>
+                            {ev.image && (
+                              <img
+                                src={ev.image}
+                                alt={ev.nameOrOrganizer_left}
+                                style={{
+                                  width: "100%",
+                                  height: "120px",
+                                  objectFit: "cover",
+                                  borderRadius: "8px",
+                                  marginBottom: "6px",
+                                }}
+                              />
+                            )}
+                            <h4 style={{ margin: "0 0 5px 0" }}>
+                              <a
+                                href="#"
+                                style={{
+                                  color: "blue",
+                                  textDecoration: "underline",
+                                }}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  navigate(`/details?id=${ev.id}`);
+                                }}
+                              >
+                                {ev.nameOrOrganizer_left}
+                                {ev.nameOrOrganizer_right
+                                  ? ` | ${ev.nameOrOrganizer_right}`
+                                  : ""}
+                              </a>
+                            </h4>
+
+                            {ev.date && (
+                              <p style={{ margin: "4px 0" }}>
+                                📅 {new Date(ev.date).toLocaleDateString()}
+                              </p>
+                            )}
+
+                            {ev.location && (
+                              <p style={{ margin: "4px 0" }}>
+                                📍 {ev.location}
+                              </p>
+                            )}
+
+                            {ev.description && (
+                              <p
+                                style={{
+                                  margin: "4px 0",
+                                  fontSize: "0.9em",
+                                  color: "#555",
+                                }}
+                              >
+                                {ev.description.length > 100
+                                  ? ev.description.slice(0, 100) + "..."
+                                  : ev.description}
+                              </p>
+                            )}
+
+                            <button
+                              style={{
+                                background: "#007bff",
+                                color: "#fff",
+                                border: "none",
+                                padding: "6px 10px",
+                                borderRadius: "4px",
+                                cursor: "pointer",
+                                marginTop: "6px",
+                              }}
+                              onClick={() => navigate(`/details?id=${ev.id}`)}
+                            >
+                              See more
+                            </button>
+                          </div>
+                        </Popup>
+                      </Marker>
+                    ))}
+                </MapContainer>
+              </section>
+            )}
+          </div>
+        )}
+        {editMode ||
+        selectedMenuItem.subHeader_left ||
+        selectedMenuItem.subHeader_right ? (
+          <div className="row mt-2">
+            <div className="col-sm-6">
+              {editMode ? (
+                <input
+                  className="form-control"
+                  value={draft.subHeader_left}
+                  placeholder="Sub header left"
+                  onChange={(e) =>
+                    handleChange("subHeader_left", e.target.value)
+                  }
+                />
+              ) : (
+                <h2>{selectedMenuItem.subHeader_left}</h2>
+              )}
+            </div>
+            <div className="col-sm-6">
+              {editMode ? (
+                <input
+                  className="form-control"
+                  value={draft.subHeader_right}
+                  placeholder="Sub header right"
+                  onChange={(e) =>
+                    handleChange("subHeader_right", e.target.value)
+                  }
+                />
+              ) : (
+                <h2 dir="rtl" style={{ textAlign: "right" }}>
+                  {selectedMenuItem.subHeader_right}
+                </h2>
+              )}
             </div>
           </div>
         ) : (
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "20px",
-              marginTop: "20px",
-            }}
-          >
-            {eventsData.map((item) => {
-              const shape = getRandomShape();
-              let containerStyle: React.CSSProperties = {
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                textAlign: "center",
-                overflow: "hidden",
-                padding: "0",
-                boxSizing: "border-box",
-              };
+          ""
+        )}
 
-              let shapeStyle: React.CSSProperties = {
-                width: "100px",
-                height: "100px",
-                overflow: "hidden",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: "#f0f0f0",
-                border: "1px solid #ccc",
-                transition: "all 0.8s ease-in-out",
-              };
-
-              if (shape === "circle") {
-                shapeStyle.borderRadius = "50%";
-                shapeStyle.transform = "scale(1)";
-                shapeStyle.transition = "all 0.8s ease-in-out";
-              } else if (shape === "rectangle") {
-                shapeStyle.width = "150px";
-                shapeStyle.transform = "scale(1)";
-                shapeStyle.transition = "all 0.8s ease-in-out";
-              } else if (shape === "triangle") {
-                shapeStyle = {
-                  ...shapeStyle,
-                  width: "100px",
-                  height: "100px",
-                  backgroundColor: "transparent",
-                  border: "none",
-                  position: "relative",
-                  clipPath: "polygon(50% 0%, 0% 100%, 100% 100%)",
-                };
-              }
-
-              const photo = item.mediaFiles?.find(
-                (file: any) => file.type === "photo"
-              );
-
-              const mediaUrl = photo
-                ? `${apiEndpointForUrl}${photo.url}`
-                : null;
-
-              return (
-                <div
-                  className="homeItems"
-                  key={item.id}
-                  onClick={() =>
-                    navigate(`/details?id=${item.id}`, {
-                      state: { detail: item.id },
-                    })
-                  }
-                >
-                  <div className="homeChild">
-                    <div style={containerStyle}>
-                      <div style={shapeStyle}>
-                        {mediaUrl ? (
-                          <img
-                            src={mediaUrl}
-                            alt="event"
-                            style={{
-                              width: "100%",
-                              height: "100%",
-                              objectFit: "cover",
-                              display: "block",
-                            }}
-                          />
-                        ) : (
-                          <div
-                            style={{
-                              width: "100%",
-                              height: "100%",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              fontSize: "12px",
-                              transition: "all 0.8s ease-in-out",
-                              color: "#333",
-                              background:
-                                shape === "triangle"
-                                  ? "#f0f0f0"
-                                  : "transparent",
-                              clipPath:
-                                shape === "triangle"
-                                  ? "polygon(50% 0%, 0% 100%, 100% 100%)"
-                                  : "none",
-                              paddingTop: shape === "triangle" ? "35px" : "0",
-                            }}
-                          >
-                            {item.type}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  {(item.nameOrOrganizer_right ||
-                    item.nameOrOrganizer_left) && (
-                    <div
-                      style={{
-                        marginTop: "5px",
-                        textAlign: "center",
-                        fontSize: "12px",
-                        wordBreak: "break-word",
-                      }}
-                    >
-                      {item.nameOrOrganizer_right
-                        ? item.nameOrOrganizer_right
-                        : item.nameOrOrganizer_left}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+        {editMode ||
+        selectedMenuItem.title_left ||
+        selectedMenuItem.title_right ? (
+          <div className="row mt-2">
+            <div className="col-sm-6">
+              {editMode ? (
+                <input
+                  className="form-control"
+                  value={draft.title_left}
+                  placeholder="Title left"
+                  onChange={(e) => handleChange("title_left", e.target.value)}
+                />
+              ) : (
+                <h2>{selectedMenuItem.title_left}</h2>
+              )}
+            </div>
+            <div className="col-sm-6">
+              {editMode ? (
+                <input
+                  className="form-control"
+                  value={draft.title_right}
+                  placeholder="Title right"
+                  onChange={(e) => handleChange("title_right", e.target.value)}
+                />
+              ) : (
+                <h2 dir="rtl" style={{ textAlign: "right" }}>
+                  {selectedMenuItem.title_right}
+                </h2>
+              )}
+            </div>
           </div>
+        ) : (
+          ""
+        )}
+
+        {editMode ||
+        selectedMenuItem.description_left ||
+        selectedMenuItem.description_right ? (
+          <div className="row mt-2">
+            <div className="col-sm-12">
+              {editMode ? (
+                <textarea
+                  className="form-control"
+                  placeholder="Description left"
+                  value={draft.description_left}
+                  onChange={(e) =>
+                    handleChange("description_left", e.target.value)
+                  }
+                />
+              ) : (
+                <span style={{ display: "block" }}>
+                  {selectedMenuItem.description_left}
+                </span>
+              )}
+            </div>
+
+            <div className="col-sm-12 mt-4">
+              {editMode ? (
+                <textarea
+                  className="form-control"
+                  placeholder="Description Right"
+                  value={draft.description_right}
+                  onChange={(e) =>
+                    handleChange("description_right", e.target.value)
+                  }
+                  style={{ textAlign: "right", display: "block" }}
+                />
+              ) : (
+                <span
+                  dir="rtl"
+                  style={{ textAlign: "right", display: "block" }}
+                >
+                  {selectedMenuItem.description_right}
+                </span>
+              )}
+            </div>
+          </div>
+        ) : (
+          ""
         )}
       </div>
+      <div className="btns">
+        {editMode ? (
+          ""
+        ) : (
+          <div className=" mt-2">
+            <button
+              className=" btnStyles"
+              onClick={() => {
+                setSelectedCategoryId(4.5);
+                navigate(`/navigationList`);
+              }}
+            >
+              Show All Navigations
+            </button>
+          </div>
+        )}
+        <div className="mt-2 ">
+          {!editMode ? (
+            <button className="btnStyles" onClick={() => setEditMode(true)}>
+              Edit Page
+            </button>
+          ) : (
+            <div className="mt-3">
+              <button className="btn btn-success me-2" onClick={handleSave}>
+                Save
+              </button>
+              <button className="btn btn-secondary" onClick={handleCancel}>
+                Cancel
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+      {editMode ? (
+        ""
+      ) : (
+        <div className="container mt-2 ">
+          <div className="showDetailsDiv">
+            {selectedMenuItem.id == 1 ? (
+              <div className="showAllNavigations">
+                <div>
+                  {!showAll ? (
+                    <button
+                      className="seeAllData"
+                      onClick={() => {
+                        setShowAll(true);
+                        getAllEvents();
+                      }}
+                    >
+                      Show More
+                    </button>
+                  ) : (
+                    <button
+                      className="seeAllData"
+                      onClick={() => {
+                        setShowAll(false);
+                        if (query) {
+                          handleSearch();
+                        } else {
+                          getEventsForHome();
+                        }
+                      }}
+                    >
+                      Show less
+                    </button>
+                  )}
+                </div>
+              </div>
+            ) : (
+              ""
+            )}
+            <button
+              className="seeAllData "
+              onClick={() => setOpenAddModal(true)}
+            >
+              Add Event
+            </button>
+          </div>
+          {eventsData.length > 0 && matchedItemId !== 1 ? (
+            <div style={{ width: "100%", overflowX: "auto" }}>
+              <div style={{ minWidth: "800px" }}>
+                <DataGrid
+                  className={`${classes.dataGrid} dataGrid mt-4`}
+                  rows={eventsData}
+                  columns={columns}
+                  initialState={{
+                    pagination: { paginationModel: { page: 0, pageSize: 10 } },
+                  }}
+                  sx={{
+                    "& .MuiDataGrid-cell": {
+                      padding: "0 10px 0 15px !important",
+                    },
+                    "& .MuiDataGrid-columnHeader": {
+                      padding: "0 10px 0 20px !important",
+                    },
+                  }}
+                  pageSizeOptions={[10, 20, 30, 50]}
+                  autoHeight
+                  getRowClassName={getRowClassName}
+                  paginationModel={paginationModel}
+                  onPaginationModelChange={handlePaginationChange}
+                />
+              </div>
+            </div>
+          ) : (
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "20px",
+                marginTop: "20px",
+              }}
+            >
+              {eventsData.map((item) => {
+                const shape = getRandomShape();
+                let containerStyle: React.CSSProperties = {
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  textAlign: "center",
+                  overflow: "hidden",
+                  padding: "0",
+                  boxSizing: "border-box",
+                };
+
+                let shapeStyle: React.CSSProperties = {
+                  width: "100px",
+                  height: "100px",
+                  overflow: "hidden",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: "#f0f0f0",
+                  border: "1px solid #ccc",
+                  transition: "all 0.8s ease-in-out",
+                };
+
+                if (shape === "circle") {
+                  shapeStyle.borderRadius = "50%";
+                  shapeStyle.transform = "scale(1)";
+                  shapeStyle.transition = "all 0.8s ease-in-out";
+                } else if (shape === "rectangle") {
+                  shapeStyle.width = "150px";
+                  shapeStyle.transform = "scale(1)";
+                  shapeStyle.transition = "all 0.8s ease-in-out";
+                } else if (shape === "triangle") {
+                  shapeStyle = {
+                    ...shapeStyle,
+                    width: "100px",
+                    height: "100px",
+                    backgroundColor: "transparent",
+                    border: "none",
+                    position: "relative",
+                    clipPath: "polygon(50% 0%, 0% 100%, 100% 100%)",
+                  };
+                }
+
+                const photo = item.mediaFiles?.find(
+                  (file: any) => file.type === "photo"
+                );
+
+                const mediaUrl = photo
+                  ? `${apiEndpointForUrl}${photo.url}`
+                  : null;
+
+                return (
+                  <div
+                    className="homeItems"
+                    key={item.id}
+                    onClick={() =>
+                      navigate(`/details?id=${item.id}`, {
+                        state: { detail: item.id },
+                      })
+                    }
+                  >
+                    <div className="homeChild">
+                      <div style={containerStyle}>
+                        <div style={shapeStyle}>
+                          {mediaUrl ? (
+                            <img
+                              src={mediaUrl}
+                              alt="event"
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "cover",
+                                display: "block",
+                              }}
+                            />
+                          ) : (
+                            <div
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: "12px",
+                                transition: "all 0.8s ease-in-out",
+                                color: "#333",
+                                background:
+                                  shape === "triangle"
+                                    ? "#f0f0f0"
+                                    : "transparent",
+                                clipPath:
+                                  shape === "triangle"
+                                    ? "polygon(50% 0%, 0% 100%, 100% 100%)"
+                                    : "none",
+                                paddingTop: shape === "triangle" ? "35px" : "0",
+                              }}
+                            >
+                              {item.type}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    {(item.nameOrOrganizer_right ||
+                      item.nameOrOrganizer_left) && (
+                      <div
+                        style={{
+                          marginTop: "5px",
+                          textAlign: "center",
+                          fontSize: "12px",
+                          wordBreak: "break-word",
+                        }}
+                      >
+                        {item.nameOrOrganizer_right
+                          ? item.nameOrOrganizer_right
+                          : item.nameOrOrganizer_left}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       <EditEventModal
         open={openModal}

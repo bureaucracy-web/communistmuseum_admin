@@ -7,9 +7,16 @@ type NavbarProps = {
   eventsData: any[];
   menuItems: any[];
   selectedMenuItem: any;
+  isColl: any;
+  loading: any;
+  selectedCategoryId: any;
+  setSelectedCategoryId: React.Dispatch<React.SetStateAction<any>>;
   setMenuItems: React.Dispatch<React.SetStateAction<any[]>>;
   setEventsData: React.Dispatch<React.SetStateAction<any[]>>;
   setSelectedMenuItem: React.Dispatch<React.SetStateAction<any>>;
+  setIsColl: React.Dispatch<React.SetStateAction<any>>;
+  setLoading: React.Dispatch<React.SetStateAction<any>>;
+  setQuery: React.Dispatch<React.SetStateAction<any>>;
 };
 
 export default function Navbar({
@@ -19,12 +26,17 @@ export default function Navbar({
   setMenuItems,
   selectedMenuItem,
   setSelectedMenuItem,
+  isColl,
+  setIsColl,
+  setLoading,
+  loading,
+  setSelectedCategoryId,
+  selectedCategoryId,
+  setQuery,
 }: NavbarProps) {
-  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(
-    null
-  );
   if (eventsData || selectedMenuItem) {
   }
+  const [showItems, setShowItems] = useState<any[]>([]);
   const navigate = useNavigate();
   const location = useLocation();
   const currentPath = location.pathname.replace("/", "");
@@ -35,7 +47,7 @@ export default function Navbar({
   const effectRan = useRef(false);
 
   function getNavigations() {
-    fetch(`${apiEndpoint}navigationCategory/getAll`, {
+    fetch(`${apiEndpoint}navigationCategory/getIsShow`, {
       headers: {
         accept: "*/*",
         "api-key": `${apiKey}`,
@@ -47,6 +59,12 @@ export default function Navbar({
       })
       .then((data) => {
         setMenuItems(data.data);
+        const filtered = data.data.filter(
+          (item: any) => item.isShowInNavbar === true
+        );
+        setShowItems(filtered);
+
+        setLoading(true);
       })
       .catch((err) => console.error("Error fetching menu:", err));
   }
@@ -79,6 +97,13 @@ export default function Navbar({
   }, []);
 
   useEffect(() => {
+    if (isColl) {
+      getNavigations();
+      setIsColl(false);
+    }
+  }, [isColl]);
+
+  useEffect(() => {
     if (menuItems.length > 0 && selectedCategoryId === null) {
       const decodedPath = decodeURIComponent(currentPath).toLowerCase().trim();
       const matchedItem = menuItems.find(
@@ -103,9 +128,9 @@ export default function Navbar({
       const bsCollapse =
         Collapse.getInstance(navbar) || new Collapse(navbar, { toggle: false });
       if (navbar.classList.contains("show")) {
-        bsCollapse.hide(); // bacvac e → pakum enq
+        bsCollapse.hide();
       } else {
-        bsCollapse.show(); // pakvac e → bacum enq
+        bsCollapse.show();
       }
     }
   }
@@ -119,9 +144,9 @@ export default function Navbar({
     }
   }
 
-  if (!menuItems.length) {
+  if (!loading) {
     return (
-      <div>
+      <div className="mt-4" style={{ margin: "10px 0 0 20px" }}>
         <h2>Loading ...</h2>
       </div>
     );
@@ -146,18 +171,15 @@ export default function Navbar({
         >
           COMUPA
         </Link>
-        <button
-          className="navbar-toggler"
-          type="button"
-          onClick={toggleNavbar} // ← sa stexcum e toggle logic
-        >
+        <button className="navbar-toggler" type="button" onClick={toggleNavbar}>
           <span className="navbar-toggler-icon"></span>
         </button>
         <div className="collapse navbar-collapse" id="navbarNav">
           <ul className="navbar-nav ms-auto navbarUl">
-            {menuItems.map((item: any) => (
+            {showItems.map((item: any) => (
               <li
                 key={item.id}
+                id={item.isBackground ? "isBackground" : undefined}
                 className={`nav-item ${
                   selectedCategoryId === item.id ? "active" : ""
                 }`}
@@ -165,6 +187,7 @@ export default function Navbar({
                   getEventsByNavCategoryId(item.id);
                   navigate(`/${item.name}`);
                   closeNavbar();
+                  setQuery("");
                 }}
               >
                 <span className="nav-link" style={{ cursor: "pointer" }}>

@@ -82,6 +82,71 @@ div:hover .hoverOverlay {
   width: 145px;
 }
 
+.documentsFrom h3 {
+  text-transform: uppercase;
+}
+.MuiDataGrid-selectedRowCount {
+  display: none !important;
+}
+
+#«r1»,
+.MuiTablePagination-selectLabel {
+  margin-bottom: 0px !important;
+}
+.css-11cfq65-MuiTablePagination-displayedRows {
+  margin-bottom: 0px !important;
+}
+.showDetailsDiv {
+  display: flex;
+}
+.showAllNavigations {
+  margin-right: 10px;
+}
+.searchDiv {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.search {
+  width: 236px;
+  height: 38px;
+  padding: 0 40px 0 10px;
+  color: #555;
+  font-size: 14px;
+  font-weight: 500;
+  text-transform: none;
+  text-decoration: none;
+  white-space: nowrap;
+  background-color: transparent;
+  border-radius: 4px;
+  border: 1px solid #bbb;
+  box-sizing: border-box;
+  font-family: "Courier Prime", monospace !important;
+}
+.searchDiv {
+  position: relative;
+}
+.searchDiv img:hover {
+  background-color: #ececec;
+}
+.searchDiv img {
+  cursor: pointer;
+  width: 35px;
+  height: 35px;
+  position: absolute;
+  right: 4px;
+  top: 2px;
+  padding: 5px;
+}
+.relateds {
+  margin-left: 20px;
+}
+#related-nav-label {
+  background-color: white !important;
+  padding: 0 8px;
+  top: 2px;
+}
 @media (max-width: 635px) {
   .shedulesParrent {
     display: grid !important;
