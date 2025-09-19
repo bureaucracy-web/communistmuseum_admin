@@ -85,7 +85,7 @@ export default function CulturalEventDetails() {
   }
 
   function getMenuItems() {
-    fetch(`${apiEndpoint}navigationCategory/getAll`, {
+    fetch(`${apiEndpoint}navigationCategory/getIsShow`, {
       headers: { accept: "*/*", "api-key": `${apiKey}` },
     })
       .then((res) => {
@@ -333,7 +333,7 @@ export default function CulturalEventDetails() {
           )}
 
           <div className="cr1 mt-5">
-            <div className="hero ">
+            <div className="hero documentsFrom">
               <h3>DOCUMENTS FROM {phase}</h3>
             </div>
             {/* EDIT BUTTON */}
@@ -341,7 +341,6 @@ export default function CulturalEventDetails() {
               <button type="button" onClick={() => setOpenModal(true)}>
                 Edit Event
               </button>
-         
             </div>
           </div>
 

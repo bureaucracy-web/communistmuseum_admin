@@ -48,7 +48,9 @@ h2 {
 /* Main content shifted */
 .event-main {
   /* margin-left: 180px; */
-  max-width: 1050px;
+  /* max-width: 1050px; */
+  width: 100%;
+  margin: 0 13px;
 }
 .lineBetween {
   position: relative;
@@ -97,7 +99,7 @@ h2 {
 }
 
 .section {
-  margin: 50px 0;
+  margin: 20px 0;
 }
 
 .sectionTwice {
@@ -189,7 +191,7 @@ h2 {
   display: inline-block;
   height: 38px;
   padding: 0 17px;
-  margin: 15px 0px;
+  margin: 10px 0px;
   color: #555;
   text-align: center;
   font-size: 14px;
