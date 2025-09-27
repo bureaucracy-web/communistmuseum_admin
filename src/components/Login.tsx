@@ -1,5 +1,5 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
 
 type LoginProps = {
   setIsAuthenticated: React.Dispatch<React.SetStateAction<boolean>>;
@@ -13,6 +13,19 @@ export default function Login({ setIsAuthenticated }: LoginProps) {
   const navigate = useNavigate();
   const apiKey = import.meta.env.VITE_API_KEY;
 
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const role = localStorage.getItem("role");
+
+    if (token && role) {
+      if (role === "admin") {
+        navigate("/");
+      } else {
+        navigate("/art");
+      }
+    }
+  }, [navigate]);
+
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -22,8 +35,8 @@ export default function Login({ setIsAuthenticated }: LoginProps) {
         method: "POST",
         headers: {
           accept: "*/*",
-          "Content-Type": "application/json", 
-          "api-key": `${apiKey}`, 
+          "Content-Type": "application/json",
+          "api-key": `${apiKey}`,
         },
         body: JSON.stringify({
           email,
@@ -38,10 +51,19 @@ export default function Login({ setIsAuthenticated }: LoginProps) {
 
       const data = await response.json();
 
-      if (data.data?.userToken?.access_token) {
-        localStorage.setItem("token", data.data.userToken.access_token);
+      const token = data.data.data?.access_token;
+      const role = data.data.data?.role;
+
+      if (token && role) {
+        localStorage.setItem("token", token);
+        localStorage.setItem("role", role);
         setIsAuthenticated(true);
-        navigate("/");
+
+        if (role === "admin") {
+          navigate("/");
+        } else {
+          navigate("/art");
+        }
       } else {
         alert("Invalid response from server");
       }

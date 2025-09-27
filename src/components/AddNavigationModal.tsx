@@ -17,7 +17,7 @@ import CloseIcon from "@mui/icons-material/Close";
 type AddModalProps = {
   open: boolean;
   onClose: () => void;
-  onCreate: (newRow: any) => void;
+  onCreate: (formData: FormData) => void; // փոխում ենք → FormData
   menuItems: any[];
 };
 
@@ -41,26 +41,83 @@ export default function AddNavigationModal({
     isBackground: false,
     isShowInWorksPage: false,
     isShowAllLocations: false,
-    relatedNavigationIds: [], 
+    relatedNavigationIds: [],
+    image: null,
   });
+
+  const resetFormData = () => {
+    setFormData({
+      header_left: "",
+      header_right: "",
+      subHeader_left: "",
+      subHeader_right: "",
+      title_left: "",
+      title_right: "",
+      description_left: "",
+      description_right: "",
+      name: "",
+      isShowInNavbar: false,
+      isBackground: false,
+      isShowInWorksPage: false,
+      isShowAllLocations: false,
+      relatedNavigationIds: [],
+      image: null,
+    });
+  };
+
+  const [imageFile, setImageFile] = useState<File | null>(null); // 👈 ֆայլի state
   const [isSaving, setIsSaving] = useState(false);
 
   const handleChange = (field: string, value: any) => {
     setFormData((prev: any) => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      onCreate(formData);
-      onClose();
-    } catch (error) {
-      console.error("Error creating navigation category:", error);
-      alert("Failed to create. Please try again.");
-    } finally {
-      setIsSaving(false);
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setImageFile(e.target.files[0]);
     }
   };
+
+const handleSave = async () => {
+  setIsSaving(true);
+  try {
+    const form = new FormData();
+
+    // dto պետք է stringify անենք
+    const dto = {
+      header_left: formData.header_left,
+      header_right: formData.header_right,
+      subHeader_left: formData.subHeader_left,
+      subHeader_right: formData.subHeader_right,
+      title_left: formData.title_left,
+      title_right: formData.title_right,
+      description_left: formData.description_left,
+      description_right: formData.description_right,
+      name: formData.name,
+      isShowInNavbar: formData.isShowInNavbar,
+      isBackground: formData.isBackground,
+      isShowInWorksPage: formData.isShowInWorksPage,
+      isShowAllLocations: formData.isShowAllLocations,
+      relatedNavigationIds: formData.relatedNavigationIds,
+    };
+
+    form.append("dto", JSON.stringify(dto));
+
+    if (imageFile) {
+      form.append("image", imageFile); 
+    }
+
+    await onCreate(form);
+    resetFormData();
+    onClose();
+  } catch (error) {
+    console.error("Error creating navigation category:", error);
+  } finally {
+    setIsSaving(false);
+  }
+};
+
+
 
   const editableFields = [
     "name",
@@ -135,7 +192,7 @@ export default function AddNavigationModal({
             MenuProps={{
               PaperProps: {
                 style: {
-                  maxHeight: 38 * 5.5, // 🔹 5 hat item-ic aveli depqum scrol
+                  maxHeight: 48 * 5 + 8, // max 5 items + scroll
                 },
               },
             }}
@@ -167,6 +224,21 @@ export default function AddNavigationModal({
           </Select>
         </FormControl>
 
+        {/* ✅ Upload image */}
+        <Box mt={2}>
+          <Button variant="outlined" component="label">
+            Upload image
+            <input
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={handleFileChange}
+            />
+          </Button>
+          {imageFile && <p style={{ marginTop: "8px" }}>{imageFile.name}</p>}
+        </Box>
+
+        {/* Checkboxes */}
         <FormControlLabel
           control={
             <Checkbox

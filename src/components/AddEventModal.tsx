@@ -71,6 +71,7 @@ export default function AddEventModal({
     navigationCategory: { id: "" },
     type: "text",
     isShowInHome: false,
+    publish: true,
   };
 
   const [formData, setFormData] = useState(initialFormData);
@@ -228,6 +229,7 @@ export default function AddEventModal({
     "additionalNotes_right",
     "type",
     "keyword",
+    "publish",
   ];
 
   return (
@@ -329,6 +331,15 @@ export default function AddEventModal({
             />
           }
           label="Show in Home"
+        />
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={!!formData.publish}
+              onChange={(e) => handleChange("publish", e.target.checked)}
+            />
+          }
+          label="Publish"
         />
 
         <Box mt={2}>

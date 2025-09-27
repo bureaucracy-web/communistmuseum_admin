@@ -1,4 +1,3 @@
-// src/components/EditEventModal.tsx
 import {
   Modal,
   Box,
@@ -172,6 +171,7 @@ export default function EditEventModal({
     "additionalNotes_right",
     "type",
     "keyword",
+    "publish",
   ];
 
   const handlePdfImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -286,6 +286,16 @@ export default function EditEventModal({
             />
           }
           label="Show in Home"
+        />
+
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={!!formData.publish}
+              onChange={(e) => handleChange("publish", e.target.checked)}
+            />
+          }
+          label="Publish"
         />
 
         <Box mt={2} className="deleteModalIcon">
