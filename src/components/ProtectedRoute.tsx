@@ -1,17 +1,32 @@
-import type { JSX } from "react";
-import { Navigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 type ProtectedRouteProps = {
   isAuthenticated: boolean;
-  children: JSX.Element;
+  requiredRole?: string; // admin կամ art
+  children: React.ReactNode;
 };
 
 export default function ProtectedRoute({
   isAuthenticated,
+  requiredRole,
   children,
 }: ProtectedRouteProps) {
+  const navigate = useNavigate();
+  const role = localStorage.getItem("role");
+
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    navigate("/login");
+    return null;
   }
-  return children;
+
+  if (requiredRole && role !== requiredRole) {
+    if (role === "art") {
+      navigate("/art");
+    } else {
+      navigate("/"); // fallback
+    }
+    return null;
+  }
+
+  return <>{children}</>;
 }

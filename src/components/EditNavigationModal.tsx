@@ -31,6 +31,14 @@ export default function EditNavigationModal({
 }: EditModalProps) {
   const [formData, setFormData] = useState<any>({});
   const [isSaving, setIsSaving] = useState(false);
+const [imageFile, setImageFile] = useState<File | null>(null);
+
+
+const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  if (e.target.files && e.target.files[0]) {
+    setImageFile(e.target.files[0]);
+  }
+};
 
   useEffect(() => {
     if (row) {
@@ -48,15 +56,24 @@ export default function EditNavigationModal({
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      onSave(formData);
+      const form = new FormData();
+      form.append("dto", JSON.stringify(formData));
+      form.append("id", formData.id); 
+
+      if (imageFile) {
+        form.append("image", imageFile);
+      }
+
+      await onSave(form);
       onClose();
     } catch (error) {
       console.error("Error saving navigation category:", error);
-      alert("Failed to save. Please try again.");
     } finally {
       setIsSaving(false);
     }
   };
+
+
 
   if (!row) return null;
 
@@ -149,7 +166,7 @@ export default function EditNavigationModal({
                   key={item.id}
                   value={item.id}
                   disabled={isCurrentEditing}
-                  selected={isSelected} 
+                  selected={isSelected}
                   sx={{
                     backgroundColor: isCurrentEditing
                       ? "gray"
@@ -184,6 +201,19 @@ export default function EditNavigationModal({
             })}
           </Select>
         </FormControl>
+
+        <Box mt={2}>
+          <Button variant="outlined" component="label">
+            Upload image
+            <input
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={handleFileChange}
+            />
+          </Button>
+          {imageFile && <p style={{ marginTop: "8px" }}>{imageFile.name}</p>}
+        </Box>
 
         <FormControlLabel
           control={

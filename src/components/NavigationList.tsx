@@ -81,17 +81,16 @@ export default function NavigationList({
     setIsColl(!isColl);
   };
 
-  const handleUpdate = async (updatedRow: any) => {
+  const handleUpdate = async (formData: FormData) => {
     try {
       const res = await fetch(
-        `${apiEndpoint}navigationCategory/update/${updatedRow.id}`,
+        `${apiEndpoint}navigationCategory/update/${formData.get("id")}`,
         {
           method: "PUT",
           headers: {
-            "Content-Type": "application/json",
             "api-key": apiKey,
           },
-          body: JSON.stringify(updatedRow),
+          body: formData,
         }
       );
       if (!res.ok) throw new Error("Update failed");
@@ -103,15 +102,14 @@ export default function NavigationList({
     }
   };
 
-  const handleCreate = async (newRow: any) => {
+  const handleCreate = async (formData: FormData) => {
     try {
       const res = await fetch(`${apiEndpoint}navigationCategory/create`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           "api-key": apiKey,
         },
-        body: JSON.stringify(newRow),
+        body: formData,
       });
       if (!res.ok) throw new Error("Create failed");
       getAllNavigations();

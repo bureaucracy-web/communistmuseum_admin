@@ -12,7 +12,13 @@ import { handleUpdate as updateEvent } from "../utils/updateHandler";
 import search from "../assets/home/search.png";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import type { LatLngExpression } from "leaflet";
-import { FormControl, InputLabel, Select, MenuItem } from "@mui/material";
+import {
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Button,
+} from "@mui/material";
 
 type MyProps = {
   eventsData: any[];
@@ -71,6 +77,14 @@ export default function Home({
   const [matchedItemId, setMatchedItemId] = useState(1);
 
   const currentPath = location.pathname.replace("/", "");
+
+  const [imageFile, setImageFile] = useState<File | null>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setImageFile(e.target.files[0]);
+    }
+  };
 
   const handleUpdate = async (
     combinedEvent: any,
@@ -215,8 +229,8 @@ export default function Home({
     {
       field: "type",
       headerName: "Type",
-      flex: 0.4, // karchacnum enq
-      minWidth: 80, // minimum 80px, vor ban chi poqrana
+      flex: 0.4,
+      minWidth: 80,
       filterable: true,
       renderCell: (params: any) => {
         const type = params.row.type;
@@ -242,6 +256,18 @@ export default function Home({
         if (type === "pdf") return <span>PDF</span>;
 
         return <span>{type}</span>;
+      },
+    },
+    {
+      field: "publish",
+      headerName: "Publish",
+      flex: 0.4,
+      minWidth: 80,
+      filterable: true,
+      renderCell: (params: any) => {
+        const type = params.row.publish;
+
+        return <span>{type ? "True" : "false"}</span>;
       },
     },
 
@@ -336,7 +362,7 @@ export default function Home({
     {
       field: "actions",
       headerName: "Actions",
-      flex: 0.5,
+      flex: 0.4,
       sortable: false,
       filterable: false,
       renderCell: (params: any) => (
@@ -380,12 +406,15 @@ export default function Home({
       .catch((err) => console.error("Error fetching events:", err));
   }
   function getEventsByNavCategoryId(navCatId: number) {
-    fetch(`${apiEndpoint}culturalEvent/getEventsByNavCategoryId/${navCatId}`, {
-      headers: {
-        accept: "*/*",
-        "api-key": `${apiKey}`,
-      },
-    })
+    fetch(
+      `${apiEndpoint}culturalEvent/getEventsByNavCategoryId/${navCatId}/1`,
+      {
+        headers: {
+          accept: "*/*",
+          "api-key": `${apiKey}`,
+        },
+      }
+    )
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         return res.json();
@@ -423,24 +452,73 @@ export default function Home({
     setEditMode(false);
   };
 
+  // const handleSave = async () => {
+  //   try {
+  //     const res = await fetch(
+  //       `${apiEndpoint}navigationCategory/update/${draft.id}`,
+  //       {
+  //         method: "PUT",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           "api-key": apiKey,
+  //         },
+  //         body: JSON.stringify(draft),
+  //       }
+  //     );
+
+  //     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+
+  //     const updated = await res.json();
+
+  //     _setSelectedMenuItem(updated.data);
+  //     setEditMode(false);
+  //     setIsColl(true);
+  //   } catch (err) {
+  //     console.error("Save error:", err);
+  //   }
+  // };
   const handleSave = async () => {
+    if (!selectedMenuItem.id) return;
+
+    const dto = {
+      name: draft.name || "",
+      header_left: draft.header_left || "",
+      header_right: draft.header_right || "",
+      subHeader_left: draft.subHeader_left || "",
+      subHeader_right: draft.subHeader_right || "",
+      title_left: draft.title_left || "",
+      title_right: draft.title_right || "",
+      description_left: draft.description_left || "",
+      description_right: draft.description_right || "",
+      relatedNavigationIds: draft.relatedNavigationIds || [],
+      isShowAllLocations: draft.isShowAllLocations || false,
+      isShowInWorksPage: draft.isShowInWorksPage || false,
+      isBackground: draft.isBackground || false,
+      isShowInNavbar: draft.isShowInNavbar || false,
+      id: draft.id || null,
+    };
+
+    const form = new FormData();
+    form.append("dto", JSON.stringify(dto));
+    if (imageFile) {
+      form.append("image", imageFile);
+    }
+
     try {
       const res = await fetch(
         `${apiEndpoint}navigationCategory/update/${draft.id}`,
         {
           method: "PUT",
           headers: {
-            "Content-Type": "application/json",
             "api-key": apiKey,
           },
-          body: JSON.stringify(draft),
+          body: form, // Ուղիղ FormData, ոչ JSON.stringify
         }
       );
 
-      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+      if (!res.ok) throw new Error("Failed to update");
 
       const updated = await res.json();
-
       _setSelectedMenuItem(updated.data);
       setEditMode(false);
       setIsColl(true);
@@ -490,9 +568,17 @@ export default function Home({
     }
   };
 
+  const eventsWithCoordinates = eventsData.filter(
+    (ev) =>
+      ev.latitude !== null &&
+      ev.latitude !== 0 &&
+      ev.longitude !== null &&
+      ev.longitude !== 0
+  );
+
   const center: LatLngExpression | null =
-    eventsData.length > 0 && eventsData[0].latitude && eventsData[0].longitude
-      ? [eventsData[0].latitude, eventsData[0].longitude]
+    eventsWithCoordinates.length > 0
+      ? [eventsWithCoordinates[0].latitude, eventsWithCoordinates[0].longitude]
       : null;
 
   if (!loading) {
@@ -501,22 +587,26 @@ export default function Home({
   return (
     <div>
       <div className="container editMode">
-        <div className="mt-3 searchDiv">
-          <input
-            className="search"
-            placeholder="Search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={handleKeyDown}
-          />
+        {menuItems?.length > 0 ? (
+          <div className="mt-3 searchDiv">
+            <input
+              className="search"
+              placeholder="Search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={handleKeyDown}
+            />
 
-          <img
-            src={search}
-            alt="search"
-            style={{ cursor: "pointer" }}
-            onClick={handleSearch}
-          />
-        </div>
+            <img
+              src={search}
+              alt="search"
+              style={{ cursor: "pointer" }}
+              onClick={handleSearch}
+            />
+          </div>
+        ) : (
+          ""
+        )}
 
         <div className="row mt-2">
           <div className="col-sm-12">
@@ -532,7 +622,6 @@ export default function Home({
             )}
           </div>
         </div>
-
         {/* Boolean checkboxes */}
         <div className="row mt-2">
           <div className="col-sm-3">
@@ -607,7 +696,6 @@ export default function Home({
             )}
           </div>
         </div>
-
         {editMode ||
         selectedMenuItem.header_left ||
         selectedMenuItem.header_right ? (
@@ -735,7 +823,6 @@ export default function Home({
             </Select>
           </FormControl>
         )}
-
         {editMode ? (
           ""
         ) : (
@@ -841,6 +928,7 @@ export default function Home({
             )}
           </div>
         )}
+
         {editMode ||
         selectedMenuItem.subHeader_left ||
         selectedMenuItem.subHeader_right ? (
@@ -879,7 +967,6 @@ export default function Home({
         ) : (
           ""
         )}
-
         {editMode ||
         selectedMenuItem.title_left ||
         selectedMenuItem.title_right ? (
@@ -914,7 +1001,6 @@ export default function Home({
         ) : (
           ""
         )}
-
         {editMode ||
         selectedMenuItem.description_left ||
         selectedMenuItem.description_right ? (
@@ -956,11 +1042,53 @@ export default function Home({
                 </span>
               )}
             </div>
+            {editMode ? (
+              <div className="mt-3">
+                <Button variant="outlined" component="label">
+                  Upload image
+                  <input
+                    type="file"
+                    accept="image/*"
+                    hidden
+                    onChange={handleFileChange}
+                  />
+                </Button>
+                {imageFile && (
+                  <p style={{ marginTop: "8px" }}>{imageFile.name}</p>
+                )}
+              </div>
+            ) : (
+              ""
+            )}
           </div>
         ) : (
           ""
         )}
       </div>
+
+      {!selectedMenuItem.isShowAllLocations &&
+      selectedMenuItem?.image &&
+      !selectedMenuItem.isShowAllLocations ? (
+        <div>
+          <div className="container editMode">
+            <div className="row mt-2">
+              <div className="col-sm-12">
+                <h2>{selectedMenuItem.name}</h2>
+                <img
+                  src={apiEndpointForUrl + selectedMenuItem.image}
+                  alt={apiEndpointForUrl + selectedMenuItem.image}
+                  style={{
+                    width: "100%",
+                    maxHeight: "400px",
+                    objectFit: "cover",
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <div className="btns">
         {editMode ? (
           ""

@@ -1,0 +1,52 @@
+.contentParrent {
+  margin: 50px 100px;
+}
+
+.contentParrent .MuiIconButton-sizeSmall {
+  color: red;
+  padding: 6px;
+  background-color: white;
+  margin: 12px;
+}
+
+.contentParrent .MuiIconButton-sizeSmall:hover {
+  background-color: rgb(207, 204, 204);
+  cursor: pointer;
+}
+
+.css-f6mhdk,
+.css-1xxkxk6 {
+  margin-top: 0px !important;
+}
+
+.contentParrent .css-qrrc4a div {
+  width: 200px;
+}
+.contentParrent .MuiButton-colorError {
+  border: 1px solid gray !important;
+}
+.location-section {
+  margin-top: -35px !important;
+}
+@media (max-width: 1475px) {
+  .css-qrrc4a div {
+    width: 100%;
+  }
+}
+
+@media (max-width: 778px) {
+  .css-qrrc4a {
+    display: grid !important;
+  }
+}
+@media (max-width: 600px) {
+  .contentParrent {
+    margin: 30px 80px;
+  }
+}
+
+@media (max-width: 466px) {
+  .contentParrent {
+    margin: 20px 20px;
+  }
+}

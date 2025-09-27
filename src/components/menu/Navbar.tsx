@@ -71,7 +71,7 @@ export default function Navbar({
 
   function getEventsByNavCategoryId(navCatId: number) {
     setSelectedCategoryId(navCatId);
-    fetch(`${apiEndpoint}culturalEvent/getEventsByNavCategoryId/${navCatId}`, {
+    fetch(`${apiEndpoint}culturalEvent/getEventsByNavCategoryId/${navCatId}/1`, {
       headers: {
         accept: "*/*",
         "api-key": `${apiKey}`,
