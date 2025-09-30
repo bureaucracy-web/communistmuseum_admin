@@ -321,8 +321,13 @@ export default function AddArtFormFull() {
       .then((res) => res.json())
       .then(() =>
         Swal.fire({
-          title:
-            "The event has been created successfully. تم إنشاء الحدث بنجاح.",
+          html: `
+        <h3 style="text-align:center;">
+          <div style="direction:ltr;">The event has been created successfully</div>
+          <div style="direction:rtl;"> تم إنشاء الحدث بنجاح.</div>
+        </h3>
+        <br/>
+      `,
           icon: "success",
           confirmButtonColor: "#16285e",
         }).then(() => handleCancel())
@@ -386,7 +391,20 @@ export default function AddArtFormFull() {
         <Box flex={{ xs: "1 1 100%", sm: "1 1 45%" }}>
           {englishFields.map((field) => (
             <Box key={field.key} mb={2}>
-              {field.key.startsWith("description_left") ? (
+              {field.key === "about_left" ? (
+                <TextField
+                  fullWidth
+                  label={field.label}
+                  multiline
+                  rows={5}
+                  value={(formData as any)[field.key]}
+                  onChange={(e) =>
+                    handleChange(field.key as keyof FormData, e.target.value)
+                  }
+                  error={!!errors[field.key]}
+                  helperText={errors[field.key] ?? ""}
+                />
+              ) : field.key.startsWith("description_left") ? (
                 <Box
                   mt={2}
                   sx={{
@@ -475,7 +493,20 @@ export default function AddArtFormFull() {
         <Box flex={{ xs: "1 1 100%", sm: "1 1 45%" }} dir="rtl">
           {arabicFields.map((field) => (
             <Box key={field.key} mb={2}>
-              {field.key.startsWith("description_right") ? (
+              {field.key === "about_right" ? (
+                <TextField
+                  fullWidth
+                  label={field.label}
+                  multiline
+                  rows={5}
+                  value={(formData as any)[field.key]}
+                  onChange={(e) =>
+                    handleChange(field.key as keyof FormData, e.target.value)
+                  }
+                  error={!!errors[field.key]}
+                  helperText={errors[field.key] ?? ""}
+                />
+              ) : field.key.startsWith("description_right") ? (
                 <Box
                   mt={2}
                   sx={{
@@ -753,7 +784,6 @@ export default function AddArtFormFull() {
                     placeholder: "--:--",
                   },
                 }}
-                // եթե value դատարկ է, browser-ը լռակատարված չի ցույց տալիս 09:00
                 defaultValue=""
               />
 
@@ -772,6 +802,8 @@ export default function AddArtFormFull() {
                 }}
                 defaultValue=""
               />
+              
+
               <Button color="error" onClick={() => removeSchedule(i)}>
                 X
               </Button>
