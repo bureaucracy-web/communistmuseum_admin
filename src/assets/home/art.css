@@ -30,7 +30,7 @@
 }
 @media (max-width: 1475px) {
   .css-qrrc4a div {
-    width: 100%;
+    width: 100% !important;
   }
 }
 
