@@ -149,7 +149,7 @@ export default function AddArtFormFull() {
     }
 
     if (!formData.description_table_left.trim()) {
-      newErrors["description_table_left"] = "Short description is required.";
+      newErrors["description_table_left"] = "One line description is required.";
       newErrors["description_table_right"] = "الوصف القصير مطلوب.";
     }
 
@@ -183,7 +183,14 @@ export default function AddArtFormFull() {
   const addSchedule = () =>
     setSchedules((prev) => [
       ...prev,
-      { year: new Date().getFullYear(), startTime: "09:00", endTime: "17:00" },
+      {
+        year: null,
+        month: null,
+        dayOfMonth: null,
+        dayOfWeek: null,
+        startTime: null,
+        endTime: null,
+      },
     ]);
 
   const removeSchedule = (index: number) =>
@@ -245,12 +252,51 @@ export default function AddArtFormFull() {
   };
   const handleSubmit = () => {
     if (!validateForm()) {
+      const errors = [
+        { en: "Category is required.", ar: "الفئة مطلوبة." },
+        { en: "Name is required.", ar: "الاسم مطلوب." },
+        { en: "Title is required.", ar: "العنوان مطلوب." },
+        {
+          en: "One line description is required.",
+          ar: "وصف من سطر واحد مطلوب.",
+        },
+        {
+          en: "At least one date is required.",
+          ar: "مطلوب إدخال تاريخ واحد على الأقل",
+        },
+      ];
+
+      const htmlList = `
+      <ul style="margin:0; padding-left:1.2em;">
+        ${errors
+          .map(
+            (err) => `
+            <li style="text-align:left;">
+              <div style="direction:ltr;">${err.en}</div>
+              <div style="direction:rtl; text-align:right;">${err.ar}</div>
+            </li>
+          `
+          )
+          .join("")}
+      </ul>
+    `;
+
       Swal.fire({
-        title:
-          "Please fill all required fields. يرجى ملء جميع الحقول المطلوبة.",
+        html: `
+        <h4 style="text-align:center;">
+          <div style="direction:ltr;">Please fill all required fields.</div>
+          <div style="direction:rtl;">يرجى ملء جميع الحقول المطلوبة.</div>
+        </h4>
+        <br/>
+        ${htmlList}
+      `,
         icon: "error",
+        showCloseButton: true,
         confirmButtonColor: "#d33",
+        focusConfirm: false,
+        confirmButtonText: "OK",
       });
+
       return;
     }
 
@@ -701,7 +747,16 @@ export default function AddArtFormFull() {
                 onChange={(e) =>
                   handleScheduleChange(i, "startTime", e.target.value || null)
                 }
+                InputLabelProps={{ shrink: true }}
+                InputProps={{
+                  inputProps: {
+                    placeholder: "--:--",
+                  },
+                }}
+                // եթե value դատարկ է, browser-ը լռակատարված չի ցույց տալիս 09:00
+                defaultValue=""
               />
+
               <TextField
                 label="End Time وقت الانتهاء"
                 type="time"
@@ -709,6 +764,13 @@ export default function AddArtFormFull() {
                 onChange={(e) =>
                   handleScheduleChange(i, "endTime", e.target.value || null)
                 }
+                InputLabelProps={{ shrink: true }}
+                InputProps={{
+                  inputProps: {
+                    placeholder: "--:--",
+                  },
+                }}
+                defaultValue=""
               />
               <Button color="error" onClick={() => removeSchedule(i)}>
                 X
