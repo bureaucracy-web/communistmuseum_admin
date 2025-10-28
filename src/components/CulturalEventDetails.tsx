@@ -8,10 +8,6 @@ import "./../assets/home/home.css";
 import "./../assets/culturalEvents/culturalEvents.css";
 import EditEventModal from "./EditEventModal";
 
-type CulturalEventDetailsProps = {
-  slug?: string;
-};
-
 type Media = {
   id: number;
   url: string;
