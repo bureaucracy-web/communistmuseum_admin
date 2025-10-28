@@ -88,9 +88,9 @@ export default function AddEventModal({
   };
 
   const createSchedule = (
-    dayOfWeek = 1,
-    startTime = "09:00",
-    endTime = "17:00",
+    dayOfWeek = null,
+    startTime = null,
+    endTime = null,
     month?: number
   ) => ({
     dayOfWeek,
@@ -104,6 +104,7 @@ export default function AddEventModal({
     setSchedules((prev) => prev.filter((_, i) => i !== index));
 
   const detectFileType = (file: File) => {
+ 
     if (file.type.startsWith("image/")) return "photo";
     if (file.type.startsWith("video/")) return "video";
     if (file.type.startsWith("audio/")) return "audio";
@@ -112,6 +113,8 @@ export default function AddEventModal({
       return "word";
     if (file.name.endsWith(".xls") || file.name.endsWith(".xlsx"))
       return "excel";
+    if (file.type === "application/epub+zip" || file.name.endsWith(".epub"))
+      return "epub";
     return "file";
   };
 
@@ -146,6 +149,7 @@ export default function AddEventModal({
       let typeToSet = "text";
       if (updated.some((mf) => mf.type === "photo")) typeToSet = "photo";
       else if (updated.some((mf) => mf.type === "pdf")) typeToSet = "pdf";
+      else if (updated.some((mf) => mf.type === "epub")) typeToSet = "epub";
       else if (updated.some((mf) => mf.type === "video")) typeToSet = "video";
       else if (updated.some((mf) => mf.type === "audio")) typeToSet = "audio";
       handleChange("type", typeToSet);
@@ -178,6 +182,7 @@ export default function AddEventModal({
       latitude: formData.latitude ? parseFloat(formData.latitude) : null,
       longitude: formData.longitude ? parseFloat(formData.longitude) : null,
     };
+
     payload.append("dto", JSON.stringify(combinedEvent));
     mediaFiles.forEach((mf) => payload.append("files", mf.file));
     if (pdfImage) payload.append("pdfImage", pdfImage);
@@ -227,6 +232,7 @@ export default function AddEventModal({
     "description_right",
     "additionalNotes_left",
     "additionalNotes_right",
+    "usefullExternalLinks",
     "type",
     "keyword",
     "publish",
@@ -393,9 +399,9 @@ export default function AddEventModal({
           </Box>
         </Box>
 
-        {mediaFiles.some((mf) => mf.type === "pdf") && (
+        {mediaFiles.some((mf) => mf.type === "pdf" || mf.type === "epub") && (
           <Box mt={2}>
-            <h4>Upload PDF Image (optional)</h4>
+            <h4>Upload PDF/EPUB Image (optional)</h4>
             <input
               id="pdf-image-upload"
               type="file"
@@ -405,14 +411,14 @@ export default function AddEventModal({
             />
             <label htmlFor="pdf-image-upload">
               <Button variant="outlined" component="span">
-                Select PDF Image
+                Select Image for PDF/EPUB
               </Button>
             </label>
             {pdfImage && (
               <Box mt={1}>
                 <img
                   src={URL.createObjectURL(pdfImage)}
-                  alt="PDF Preview"
+                  alt="Preview"
                   style={{ width: 120, height: 80, objectFit: "cover" }}
                 />
               </Box>
@@ -556,7 +562,14 @@ export default function AddEventModal({
                 onChange={(e) =>
                   handleScheduleChange(i, "startTime", e.target.value || null)
                 }
+                InputLabelProps={{ shrink: true }}
+                InputProps={{
+                  inputProps: {
+                    placeholder: "--:--",
+                  },
+                }}
               />
+
               <TextField
                 label="End Time"
                 type="time"
@@ -564,6 +577,12 @@ export default function AddEventModal({
                 onChange={(e) =>
                   handleScheduleChange(i, "endTime", e.target.value || null)
                 }
+                InputLabelProps={{ shrink: true }}
+                InputProps={{
+                  inputProps: {
+                    placeholder: "--:--",
+                  },
+                }}
               />
 
               <Button

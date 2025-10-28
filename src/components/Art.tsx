@@ -7,7 +7,16 @@ import { Editor } from "@tinymce/tinymce-react";
 
 type MediaFile = {
   file: File;
-  type: "photo" | "audio" | "pdf" | "video" | "other";
+  type:
+    | "text"
+    | "photo"
+    | "audio"
+    | "pdf"
+    | "video"
+    | "epub"
+    | "exel"
+    | "word"
+    | "other";
 };
 
 type Schedule = {
@@ -51,7 +60,16 @@ type FormData = {
   additionalNotes_right: string;
   usefullExternalLinks: string[];
   navigationCategory: { id: string };
-  type: "text" | "image" | "video";
+  type:
+    | "text"
+    | "photo"
+    | "audio"
+    | "pdf"
+    | "video"
+    | "epub"
+    | "exel"
+    | "word"
+    | "other";
   isShowInHome: boolean;
   public: boolean;
 };
@@ -66,7 +84,7 @@ const englishFields = [
     key: "description_table_left",
     label: "One line description ",
   },
-  { key: "additionalNotes_left", label: "Short Description (Wall Text)" },
+  { key: "additionalNotes_left", label: "Additional Notes" },
   { key: "description_left", label: "Full Description" },
 ];
 
@@ -77,7 +95,7 @@ const arabicFields = [
   { key: "about_right", label: "السيرة الذاتية" },
   { key: "usefullExternalLinks", label: "روابط مفيدة" },
   { key: "description_table_right", label: "وصف بجملة او سطر  واحدة" },
-  { key: "additionalNotes_right", label: "وصف مختصر (على الحائط بجانب العمل)" },
+  { key: "additionalNotes_right", label: "ملاحظات إضافية" },
   { key: "description_right", label: "الوصف الكامل" },
 ];
 
@@ -170,8 +188,15 @@ export default function AddArtFormFull() {
       else if (f.type.startsWith("audio/")) type = "audio";
       else if (f.type === "application/pdf") type = "pdf";
       else if (f.type.startsWith("video/")) type = "video";
+      else if (f.name.endsWith(".epub")) type = "epub";
+      else if (f.name.endsWith(".doc") || f.name.endsWith(".docx"))
+        type = "word";
+      else if (f.name.endsWith(".xls") || f.name.endsWith(".xlsx"))
+        type = "exel";
+
       return { file: f, type };
     });
+
     setMediaFiles((prev) => [...prev, ...newFiles]);
     e.target.value = "";
   };
@@ -357,7 +382,7 @@ export default function AddArtFormFull() {
   }
 
   return (
-    <div className="contentParrent">
+    <div className="contentParrent ">
       <Box width="100%">
         <TextField
           select
@@ -396,13 +421,15 @@ export default function AddArtFormFull() {
                   fullWidth
                   label={field.label}
                   multiline
-                  rows={5}
                   value={(formData as any)[field.key]}
                   onChange={(e) =>
                     handleChange(field.key as keyof FormData, e.target.value)
                   }
                   error={!!errors[field.key]}
                   helperText={errors[field.key] ?? ""}
+                  minRows={2}
+                  maxRows={10}
+                  InputProps={{ sx: { overflow: "hidden" } }}
                 />
               ) : field.key.startsWith("description_left") ? (
                 <Box
@@ -417,6 +444,7 @@ export default function AddArtFormFull() {
                 >
                   <label>{field.label}</label>
                   <Editor
+                    id="english-editor"
                     apiKey="bdajbbugxu6j05xr99jbswp90otf44nmrpzeztosd69rese0"
                     value={(formData as any)[field.key]}
                     onEditorChange={(content) =>
@@ -424,7 +452,9 @@ export default function AddArtFormFull() {
                     }
                     init={{
                       height: 300,
-                      menubar: false,
+                      menubar: true,
+                      language: "en",
+                      language_url: "/tinymce/langs/en.js",
                       plugins: [
                         "advlist",
                         "autolink",
@@ -473,6 +503,10 @@ export default function AddArtFormFull() {
                   }
                   error={!!errors[field.key]}
                   helperText={errors[field.key] ?? ""}
+                  multiline
+                  minRows={2}
+                  maxRows={10}
+                  InputProps={{ sx: { overflow: "hidden" } }}
                 />
               ) : (
                 <TextField
@@ -484,27 +518,37 @@ export default function AddArtFormFull() {
                   }
                   error={!!errors[field.key]}
                   helperText={errors[field.key] ?? ""}
+                  multiline
+                  minRows={2}
+                  maxRows={10}
+                  InputProps={{ sx: { overflow: "hidden" } }}
                 />
               )}
             </Box>
           ))}
         </Box>
 
-        <Box flex={{ xs: "1 1 100%", sm: "1 1 45%" }} dir="rtl">
+        <Box
+          flex={{ xs: "1 1 100%", sm: "1 1 45%" }}
+          dir="rtl"
+          className="abxoutFormParrent"
+        >
           {arabicFields.map((field) => (
             <Box key={field.key} mb={2}>
               {field.key === "about_right" ? (
                 <TextField
                   fullWidth
                   label={field.label}
-                  multiline
-                  rows={5}
                   value={(formData as any)[field.key]}
                   onChange={(e) =>
                     handleChange(field.key as keyof FormData, e.target.value)
                   }
                   error={!!errors[field.key]}
                   helperText={errors[field.key] ?? ""}
+                  multiline
+                  minRows={2}
+                  maxRows={10}
+                  InputProps={{ sx: { overflow: "hidden" } }}
                 />
               ) : field.key.startsWith("description_right") ? (
                 <Box
@@ -519,6 +563,7 @@ export default function AddArtFormFull() {
                 >
                   <label>{field.label}</label>
                   <Editor
+                    id="arabic-editor"
                     apiKey="bdajbbugxu6j05xr99jbswp90otf44nmrpzeztosd69rese0"
                     value={(formData as any)[field.key]}
                     onEditorChange={(content) =>
@@ -526,8 +571,8 @@ export default function AddArtFormFull() {
                     }
                     init={{
                       height: 300,
-                      menubar: false,
-                      language: "ar",
+                      menubar: true,
+                      // language: "ar",
                       directionality: "rtl",
                       plugins: [
                         "advlist",
@@ -577,6 +622,10 @@ export default function AddArtFormFull() {
                   }
                   error={!!errors[field.key]}
                   helperText={errors[field.key] ?? ""}
+                  multiline
+                  minRows={2}
+                  maxRows={10}
+                  InputProps={{ sx: { overflow: "hidden" } }}
                 />
               ) : (
                 <TextField
@@ -588,6 +637,10 @@ export default function AddArtFormFull() {
                   }
                   error={!!errors[field.key]}
                   helperText={errors[field.key] ?? ""}
+                  multiline
+                  minRows={2}
+                  maxRows={10}
+                  InputProps={{ sx: { overflow: "hidden" } }}
                 />
               )}
             </Box>
@@ -784,7 +837,6 @@ export default function AddArtFormFull() {
                     placeholder: "--:--",
                   },
                 }}
-                defaultValue=""
               />
 
               <TextField
@@ -800,9 +852,7 @@ export default function AddArtFormFull() {
                     placeholder: "--:--",
                   },
                 }}
-                defaultValue=""
               />
-              
 
               <Button color="error" onClick={() => removeSchedule(i)}>
                 X

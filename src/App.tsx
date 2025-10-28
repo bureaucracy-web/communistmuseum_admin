@@ -99,7 +99,7 @@ export default function App() {
                         />
                       }
                     />
-                    <Route path="details" element={<CulturalEventDetails />} />
+                    <Route path="event" element={<CulturalEventDetails />} />
                     <Route path="list" element={<CulturalEventDetails />} />
                     <Route
                       path="navigationList"

@@ -28,6 +28,14 @@
 .location-section {
   margin-top: -35px !important;
 }
+
+.abxoutFormParrent .css-113d811-MuiFormLabel-root-MuiInputLabel-root {
+  right: 15px !important;
+  left: auto !important;
+}
+
+
+
 @media (max-width: 1475px) {
   .css-qrrc4a div {
     width: 100% !important;

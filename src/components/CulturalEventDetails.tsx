@@ -8,11 +8,24 @@ import "./../assets/home/home.css";
 import "./../assets/culturalEvents/culturalEvents.css";
 import EditEventModal from "./EditEventModal";
 
+type CulturalEventDetailsProps = {
+  slug?: string;
+};
+
 type Media = {
   id: number;
   url: string;
   name: string;
-  type: "audio" | "video" | "pdf" | "photo" | "word" | "excel";
+  type:
+    | "text"
+    | "photo"
+    | "audio"
+    | "pdf"
+    | "video"
+    | "epub"
+    | "exel"
+    | "word"
+    | "other";
 };
 
 export default function CulturalEventDetails() {
@@ -79,7 +92,8 @@ export default function CulturalEventDetails() {
       })
       .then((data) => {
         setEvent(data.data);
-        setPhase(data.data.navigationCategory.name);
+        console.log(data.data);
+        setPhase(data.data.navigationCategory?.name);
       })
       .catch((err) => console.error("Error fetching events:", err));
   }
@@ -125,7 +139,9 @@ export default function CulturalEventDetails() {
     );
     const videos = media.filter((m) => m.type === "video");
     const audios = media.filter((m) => m.type === "audio");
-    const docs = media.filter((m) => ["pdf", "word", "excel"].includes(m.type));
+    const docs = media.filter((m) =>
+      ["epub", "pdf", "word", "excel"].includes(m.type)
+    );
     return { photos, videos, docs, audios };
   }, [media, heroPhoto]);
 
@@ -153,28 +169,30 @@ export default function CulturalEventDetails() {
       <div className="meta-pair">
         <b>{label}</b>
         <div className="meta-pair-child container">
-          {hasRight && (
-            <span
-              className={
-                leftValue ? "rtl col-sm-6 rtlSp" : "rtl col-sm-12 rtlSpC"
-              }
-              dir="rtl"
-            >
-              {rightValue}
-            </span>
-          )}
-          {rightValue && leftValue ? (
-            <div className="lineBetweenCard"></div>
-          ) : (
-            ""
-          )}
           {hasLeft && (
             <span
               className={
                 rightValue ? "ltr col-sm-6 ltrSp" : "ltr col-sm-12 ltrSpC"
               }
+              dir="rtl"
             >
               {leftValue}
+            </span>
+          )}
+          {rightValue && leftValue ? (
+            <div className="lineBetween marginAll"></div>
+          ) : (
+            ""
+          )}
+
+          {hasRight && (
+            <span
+              className={
+                leftValue ? "rtl col-sm-6 rtlSp" : "rtl col-sm-12 rtlSpC"
+              }
+              // dir="rtl"
+            >
+              {rightValue}
             </span>
           )}
         </div>
@@ -191,7 +209,7 @@ export default function CulturalEventDetails() {
     if (m.type === "photo")
       return (
         <div
-          className="file-card photo"
+          className="file-card photo "
           onClick={() => window.open(url, "_blank")}
         >
           <div className="photo-wrapper">
@@ -202,23 +220,27 @@ export default function CulturalEventDetails() {
 
     if (m.type === "video")
       return (
-        <div className="file-card video">
-          <video src={url} controls />
+        <div className="fileCardContent">
+          <div className="file-card video">
+            <video src={url} controls />
+          </div>
         </div>
       );
 
     if (m.type === "audio")
       return (
-        <div className="file-card audio">
-          <audio src={url} controls />
+        <div className="fileCardContent">
+          <div className="file-card audio">
+            <audio src={url} controls />
+          </div>
         </div>
       );
 
-    if (m.type === "pdf") {
+    if (m.type === "pdf" || m.type === "epub") {
       if (pdfImage) {
         return (
           <div
-            className="file-card pdf pdfCards"
+            className=" pdf pdfCards "
             onClick={() => window.open(url, "_blank")}
             style={{ display: "block" }}
           >
@@ -226,7 +248,7 @@ export default function CulturalEventDetails() {
               <img src={pdfImage} alt={m.name} title="Click to view" />
             </div>
             <div className="mt-2">
-              <span>PDF</span>
+              <span>{m.type === "epub" ? "EPUB" : "PDF"}</span>
             </div>
           </div>
         );
@@ -236,7 +258,10 @@ export default function CulturalEventDetails() {
             className="file-card doc"
             onClick={() => window.open(url, "_blank")}
           >
-            <div className="doc-box">PDF</div>
+            <div className="doc-box">
+              {" "}
+              <span>{m.type === "epub" ? "EPUB" : "PDF"}</span>
+            </div>
           </div>
         );
       }
@@ -265,7 +290,11 @@ export default function CulturalEventDetails() {
     return (
       <div className="files-group">
         <h4>{title}</h4>
-        <div className="files-grid">
+        <div
+          className={
+            title === "Documents" || title === "Images" ? "d-flex" : ""
+          }
+        >
           {visible.map((m) => (
             <FileCard key={m.id} m={m} />
           ))}
@@ -296,92 +325,24 @@ export default function CulturalEventDetails() {
   return (
     <div className="event-layout">
       {/* MAIN CONTENT */}
-      <div className="event-main mt-5">
-        {/* NAME */}
-        <div className="event-header">
-          {(event?.nameOrOrganizer_left || event?.nameOrOrganizer_right) && (
-            <h3 className="event-name container">
-              {event?.nameOrOrganizer_right && (
-                <span
-                  className={
-                    event?.nameOrOrganizer_left
-                      ? "rtl col-sm-6 rtlSp"
-                      : "rtl col-sm-12 rtlSpC"
-                  }
-                  dir="rtl"
-                >
-                  {event.nameOrOrganizer_right}
-                </span>
-              )}
-              {event?.nameOrOrganizer_right && event?.nameOrOrganizer_left ? (
-                <div className="lineBetween"></div>
-              ) : (
-                ""
-              )}
-              {event?.nameOrOrganizer_left && (
-                <span
-                  className={
-                    event?.nameOrOrganizer_right
-                      ? "ltr col-sm-6 ltrSp"
-                      : "ltr col-sm-12 ltrSpC"
-                  }
-                >
-                  {event.nameOrOrganizer_left}
-                </span>
-              )}
+      <div className="event-main mt-4">
+        <div className="cr1 ">
+          <div className="hero documentsFrom">
+            <h3>
+              DOCUMENTS FROM {phase && phase.replace(/_/g, " ").toUpperCase()}
             </h3>
-          )}
-
-          <div className="cr1 mt-5">
-            <div className="hero documentsFrom">
-              <h3>DOCUMENTS FROM {phase}</h3>
-            </div>
-            {/* EDIT BUTTON */}
-            <div>
-              <button type="button" onClick={() => setOpenModal(true)}>
-                Edit Event
-              </button>
-            </div>
           </div>
-
-          {(event?.title_left || event?.title_right) && (
-            <h5 className="event-title container">
-              {event?.title_right && (
-                <span
-                  className={
-                    event?.title_left
-                      ? "rtl col-sm-6 rtlSp"
-                      : "rtl col-sm-12 rtlSpC"
-                  }
-                  dir="rtl"
-                >
-                  {event.title_right}
-                </span>
-              )}
-              {event?.nameOrOrganizer_right && event?.nameOrOrganizer_left ? (
-                <div className="lineBetween"></div>
-              ) : (
-                ""
-              )}
-              {event?.title_left && (
-                <span
-                  className={
-                    event?.title_right
-                      ? "ltr col-sm-6 ltrSp"
-                      : "ltr col-sm-12 ltrSpC"
-                  }
-                >
-                  {event.title_left}
-                </span>
-              )}
-            </h5>
-          )}
+          {/* EDIT BUTTON */}
+          <div>
+            <button type="button" onClick={() => setOpenModal(true)}>
+              Edit Event
+            </button>
+          </div>
         </div>
-
         {/* HERO */}
         {heroPhoto && (
           <div
-            className="hero mt-5"
+            className="hero mt-5 d-flex justify-content-center"
             onClick={() =>
               window.open(`${apiEndpointForUrl}${heroPhoto.url}`, "_blank")
             }
@@ -392,6 +353,57 @@ export default function CulturalEventDetails() {
             />
           </div>
         )}
+        {/* NAME */}
+        <div className="event-header mt-5">
+          {(event?.nameOrOrganizer_left || event?.nameOrOrganizer_right) && (
+            <h3 className="event-name container d-flex justify-content-center">
+              {event?.nameOrOrganizer_left && (
+                <span>{event.nameOrOrganizer_left}</span>
+              )}
+              {event?.nameOrOrganizer_right && event?.nameOrOrganizer_left ? (
+                <div className="lineBetween lineMargin"></div>
+              ) : (
+                ""
+              )}
+              {event?.nameOrOrganizer_right && (
+                <span dir="rtl">{event.nameOrOrganizer_right}</span>
+              )}
+            </h3>
+          )}
+
+          {(event?.title_left || event?.title_right) && (
+            <h5 className="event-title container">
+              {event?.title_left && (
+                <span
+                  className={
+                    event?.title_right
+                      ? "ltr col-sm-6 ltrSp"
+                      : "ltr col-sm-12 ltrSpC"
+                  }
+                  dir="rtl"
+                >
+                  {event.title_left}
+                </span>
+              )}
+              {event?.title_left && event?.title_right ? (
+                <div className="lineBetween marginAll"></div>
+              ) : (
+                ""
+              )}
+              {event?.title_right && (
+                <span
+                  className={
+                    event?.title_left
+                      ? "rtl col-sm-6 rtlSp"
+                      : "rtl col-sm-12 rtlSpC"
+                  }
+                >
+                  {event.title_right}
+                </span>
+              )}
+            </h5>
+          )}
+        </div>
 
         {/* INFO TWO-COLUMN */}
 
@@ -423,11 +435,22 @@ export default function CulturalEventDetails() {
                 event?.usefullExternalLinks?.length
                   ? event.usefullExternalLinks.map(
                       (link: string, i: number) => (
-                        <div key={i}>
+                        <div key={i} className="externalContext">
                           <a
                             href={link}
                             target="_blank"
                             rel="noopener noreferrer"
+                            style={{
+                              display: "inline-block",
+                              width: "100%",
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              textDecoration: "none",
+                              color: "#007bff",
+                              direction: "ltr",
+                            }}
+                            title={link}
                           >
                             {link}
                           </a>
