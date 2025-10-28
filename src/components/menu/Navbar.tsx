@@ -191,7 +191,7 @@ export default function Navbar({
                 }}
               >
                 <span className="nav-link" style={{ cursor: "pointer" }}>
-                  {item.name.toUpperCase()}
+                  {item.name && item.name.replace(/_/g, " ").toUpperCase()}
                 </span>
               </li>
             ))}

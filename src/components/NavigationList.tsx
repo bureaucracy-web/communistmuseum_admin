@@ -20,7 +20,7 @@ export default function NavigationList({
 }: MyProps) {
   const [paginationModel, setPaginationModel] = useState({
     page: 0,
-    pageSize: 10,
+    pageSize: 100,
   });
 
   // --- Edit Modal ---
@@ -231,7 +231,7 @@ export default function NavigationList({
             rows={navigationData}
             columns={columns}
             initialState={{
-              pagination: { paginationModel: { page: 0, pageSize: 10 } },
+              pagination: { paginationModel: { page: 0, pageSize: 100 } },
             }}
             sx={{
               "& .MuiDataGrid-cell": { padding: "0 10px 0 32px !important" },
@@ -240,7 +240,7 @@ export default function NavigationList({
               },
               "& .MuiDataGrid-menuIcon": { color: "black !important" },
             }}
-            pageSizeOptions={[10, 20, 30, 50]}
+            pageSizeOptions={[ 100, 200, 300]}
             autoHeight
             getRowClassName={getRowClassName}
             paginationModel={paginationModel}

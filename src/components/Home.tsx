@@ -1,6 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import "./../assets/home/home.css";
-import { DataGrid } from "@mui/x-data-grid";
 import { makeStyles } from "@mui/styles";
 import deleteImg from "../assets/home/delete.png";
 import editImg from "../assets/home/edit.png";
@@ -19,6 +18,7 @@ import {
   MenuItem,
   Button,
 } from "@mui/material";
+import { ResizableTh } from "./ResizableTh";
 
 type MyProps = {
   eventsData: any[];
@@ -63,11 +63,6 @@ export default function Home({
   const apiEndpoint = import.meta.env.VITE_API_ENDPOINT;
   const apiEndpointForUrl = import.meta.env.VITE_API_ENDPOINT_FOR_URL;
 
-  const [paginationModel, setPaginationModel] = useState({
-    page: 0,
-    pageSize: 10,
-  });
-
   const [openModal, setOpenModal] = useState(false);
   const [selectedRow, setSelectedRow] = useState<any>(null);
   const [editMode, setEditMode] = useState(false);
@@ -75,6 +70,172 @@ export default function Home({
   const [openAddModal, setOpenAddModal] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const [matchedItemId, setMatchedItemId] = useState(1);
+
+  // Table state for custom table (filtering + sorting)
+  const [tableFilter, setTableFilter] = useState<string | null>(null);
+
+  const [sortField, setSortField] = useState("name");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [hoveredField, setHoveredField] = useState<string | null>(null);
+
+  const handleSortClick = (field: string) => {
+    let newDirection: "asc" | "desc" = "asc";
+
+    if (field === sortField) {
+      newDirection = sortDirection === "asc" ? "desc" : "asc";
+    }
+
+    setSortField(field);
+    setSortDirection(newDirection);
+
+    handleHeaderSort(field, newDirection); // ⚡ send both values
+  };
+
+  const displayField =
+    hoveredField &&
+    ["name", "type", "publish", "startDateTime"].includes(hoveredField)
+      ? hoveredField
+      : sortField;
+
+  const handleHeaderSort = (field: string, newDirection?: string) => {
+    if (sortField === field) {
+      const nextDirection = sortDirection === "asc" ? "desc" : "asc";
+      setSortDirection(nextDirection);
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
+  const TYPE_ORDER = ["pdf", "epub", "excel", "text", "photo", "video"]; // տեսակների հերթականություն
+
+  const getSortValue = (row: any, field: string) => {
+    if (!row) return "";
+
+    // 1️⃣ Name - այբենական
+    if (field === "name") {
+      return (
+        (row.nameOrOrganizer_left ||
+          row.nameOrOrganizer_right ||
+          row.name ||
+          "") + ""
+      )
+        .toString()
+        .toLowerCase();
+    }
+
+    if (field === "publish") {
+      const value = row.publish === true || row.publish === "true";
+      return value ? 1 : 0;
+    }
+
+    if (field === "type") {
+      const type = (row.type || "").toString().toLowerCase();
+      const index = TYPE_ORDER.indexOf(type);
+
+      return index === -1 ? TYPE_ORDER.length + 1 : index;
+    }
+
+    if (field === "startDateTime") {
+      const schedule = row?.schedules?.[0];
+      if (!schedule) return "";
+      const { year, month, dayOfMonth, startTime } = schedule;
+      if (year && month && dayOfMonth) {
+        let hour = 0,
+          minute = 0;
+        if (startTime) {
+          const parts = startTime.split(":");
+          hour = parseInt(parts[0] || "0", 10) || 0;
+          minute = parseInt(parts[1] || "0", 10) || 0;
+        }
+        const date = new Date(year, month - 1, dayOfMonth, hour, minute);
+        return date.getTime();
+      }
+      return "";
+    }
+
+    const v = row[field];
+    if (v === null || typeof v === "undefined") return "";
+    if (typeof v === "string") return v.toLowerCase();
+    if (typeof v === "number") return v;
+    return String(v).toLowerCase();
+  };
+
+  const displayedRows = eventsData
+    .filter((row) => {
+      if (!tableFilter) return true;
+      const q = tableFilter.toLowerCase();
+      const name = (
+        row.nameOrOrganizer_left ||
+        row.nameOrOrganizer_right ||
+        row.name ||
+        ""
+      )
+        .toString()
+        .toLowerCase();
+      const description = (
+        row.description_table_left ||
+        row.description_table_right ||
+        row.description ||
+        ""
+      )
+        .toString()
+        .toLowerCase();
+      return name.includes(q) || description.includes(q);
+    })
+    .slice()
+    .sort((a: any, b: any) => {
+      const aVal = getSortValue(a, sortField);
+      const bVal = getSortValue(b, sortField);
+
+      const aNum = typeof aVal === "number" ? aVal : parseFloat(aVal as any);
+      const bNum = typeof bVal === "number" ? bVal : parseFloat(bVal as any);
+
+      if (!isNaN(aNum) && !isNaN(bNum)) {
+        if (aNum < bNum) return sortDirection === "asc" ? -1 : 1;
+        if (aNum > bNum) return sortDirection === "asc" ? 1 : -1;
+        return 0;
+      }
+
+      const aStr = (aVal ?? "").toString();
+      const bStr = (bVal ?? "").toString();
+      if (aStr < bStr) return sortDirection === "asc" ? -1 : 1;
+      if (aStr > bStr) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+
+  const [currentPage, setCurrentPage] = useState<number>(0);
+  const [pageSizeState, setPageSizeState] = useState<number | "all">(50);
+
+  const effectivePageSize =
+    pageSizeState === "all" ? displayedRows.length || 1 : pageSizeState;
+  const pageCount = Math.max(
+    1,
+    Math.ceil(displayedRows.length / effectivePageSize)
+  );
+
+  // Ensure currentPage is valid when rows or page size change
+  useEffect(() => {
+    if (currentPage >= pageCount) setCurrentPage(0);
+  }, [displayedRows.length, pageSizeState, pageCount, currentPage]);
+
+  const paginatedRows =
+    pageSizeState === "all"
+      ? displayedRows
+      : displayedRows.slice(
+          currentPage * effectivePageSize,
+          (currentPage + 1) * effectivePageSize
+        );
+
+  const handlePageSizeSelect = (value: number | "all") => {
+    setPageSizeState(value);
+    setCurrentPage(0);
+  };
+
+  const handleGotoPage = (p: number) => {
+    const next = Math.max(0, Math.min(pageCount - 1, p));
+    setCurrentPage(next);
+  };
 
   const currentPath = location.pathname.replace("/", "");
 
@@ -169,7 +330,7 @@ export default function Home({
           return { id: 1 };
         }
       });
-      setMatchedItemId(matchedItem.id);
+      setMatchedItemId(matchedItem?.id);
     }
   }, [menuItems, currentPath]);
 
@@ -179,50 +340,61 @@ export default function Home({
       headerName: "Name",
       flex: 1,
       renderCell: (params: any) => {
-        if (params.row.nameOrOrganizer_right) {
+        if (
+          params.row.nameOrOrganizer_right ||
+          params.row.nameOrOrganizer_left
+        ) {
           return (
-            <a
-              style={{
-                direction: "rtl",
-                textAlign: "right",
-                color: "#1EAEDB",
-                textDecoration: "underline",
-                cursor: "pointer",
-                display: "block",
-              }}
-              href={`/details?id=${params.row.id}`}
-              onClick={(e) => {
-                e.preventDefault();
-                navigate(`/details?id=${params.row.id}`, {
-                  state: { detail: params.row.id },
-                });
-              }}
-            >
-              {params.row.nameOrOrganizer_right}
-            </a>
+            <div className="d-flex">
+              <a
+                style={{
+                  color: "#1EAEDB",
+                  textDecoration: "underline",
+                  cursor: "pointer",
+                }}
+                dir="rtl"
+                href={`/event?id=${params.row.id}`}
+                onClick={(e) => {
+                  e.preventDefault();
+
+                  navigate(`/event?id=${params.row.id}`, {
+                    state: { detail: params.row.id },
+                  });
+                }}
+              >
+                {params.row.nameOrOrganizer_left}
+              </a>
+              {params.row.nameOrOrganizer_left &&
+              params.row.nameOrOrganizer_right ? (
+                <div className="lineBetween lineMargin"></div>
+              ) : (
+                ""
+              )}
+
+              <a
+                style={{
+                  direction: "rtl",
+                  textAlign: "right",
+                  color: "#1EAEDB",
+                  textDecoration: "underline",
+                  cursor: "pointer",
+                  display: "block",
+                }}
+                href={`/event?id=${params.row.id}`}
+                onClick={(e) => {
+                  e.preventDefault();
+
+                  navigate(`/event?id=${params.row.id}`, {
+                    state: { detail: params.row.id },
+                  });
+                }}
+              >
+                {params.row.nameOrOrganizer_right}
+              </a>
+            </div>
           );
         }
-        if (params.row.nameOrOrganizer_left) {
-          return (
-            <a
-              style={{
-                color: "#1EAEDB",
-                textDecoration: "underline",
-                cursor: "pointer",
-              }}
-              dir="rtl"
-              href={`/details?id=${params.row.id}`}
-              onClick={(e) => {
-                e.preventDefault();
-                navigate(`/details?id=${params.row.id}`, {
-                  state: { detail: params.row.id },
-                });
-              }}
-            >
-              {params.row.nameOrOrganizer_left}
-            </a>
-          );
-        }
+
         return null;
       },
     },
@@ -254,6 +426,7 @@ export default function Home({
         if (type === "video") return <span>Video</span>;
         if (type === "audio") return <span>Audio</span>;
         if (type === "pdf") return <span>PDF</span>;
+        if (type === "epub") return <span>EPUB</span>;
 
         return <span>{type}</span>;
       },
@@ -391,9 +564,6 @@ export default function Home({
   const getRowClassName = (params: any) =>
     params.indexRelativeToCurrentPage % 2 === 0 ? "grayed" : "";
 
-  const handlePaginationChange = (newModel: any) =>
-    setPaginationModel(newModel);
-
   function getAllEvents() {
     fetch(`${apiEndpoint}culturalEvent/getAll`, {
       headers: { accept: "*/*", "api-key": apiKey },
@@ -452,31 +622,6 @@ export default function Home({
     setEditMode(false);
   };
 
-  // const handleSave = async () => {
-  //   try {
-  //     const res = await fetch(
-  //       `${apiEndpoint}navigationCategory/update/${draft.id}`,
-  //       {
-  //         method: "PUT",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //           "api-key": apiKey,
-  //         },
-  //         body: JSON.stringify(draft),
-  //       }
-  //     );
-
-  //     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-
-  //     const updated = await res.json();
-
-  //     _setSelectedMenuItem(updated.data);
-  //     setEditMode(false);
-  //     setIsColl(true);
-  //   } catch (err) {
-  //     console.error("Save error:", err);
-  //   }
-  // };
   const handleSave = async () => {
     if (!selectedMenuItem.id) return;
 
@@ -584,6 +729,7 @@ export default function Home({
   if (!loading) {
     return <></>;
   }
+
   return (
     <div>
       <div className="container editMode">
@@ -869,7 +1015,8 @@ export default function Home({
                                 }}
                                 onClick={(e) => {
                                   e.preventDefault();
-                                  navigate(`/details?id=${ev.id}`);
+
+                                  navigate(`/event?id=${ev.id}`);
                                 }}
                               >
                                 {ev.nameOrOrganizer_left}
@@ -915,7 +1062,9 @@ export default function Home({
                                 cursor: "pointer",
                                 marginTop: "6px",
                               }}
-                              onClick={() => navigate(`/details?id=${ev.id}`)}
+                              onClick={() => {
+                                navigate(`/event?id=${ev.id}`);
+                              }}
                             >
                               See more
                             </button>
@@ -1170,27 +1319,195 @@ export default function Home({
           {eventsData.length > 0 && matchedItemId !== 1 ? (
             <div style={{ width: "100%", overflowX: "auto" }}>
               <div style={{ minWidth: "800px" }}>
-                <DataGrid
-                  className={`${classes.dataGrid} dataGrid mt-4`}
-                  rows={eventsData}
-                  columns={columns}
-                  initialState={{
-                    pagination: { paginationModel: { page: 0, pageSize: 10 } },
-                  }}
-                  sx={{
-                    "& .MuiDataGrid-cell": {
-                      padding: "0 10px 0 15px !important",
-                    },
-                    "& .MuiDataGrid-columnHeader": {
-                      padding: "0 10px 0 20px !important",
-                    },
-                  }}
-                  pageSizeOptions={[10, 20, 30, 50]}
-                  autoHeight
-                  getRowClassName={getRowClassName}
-                  paginationModel={paginationModel}
-                  onPaginationModelChange={handlePaginationChange}
-                />
+                <div className={`${classes.dataGrid} dataGrid mt-4`}>
+                  <div style={{ overflowX: "auto" }}>
+                    <table
+                      style={{
+                        width: "100%",
+                        borderCollapse: "collapse",
+                        minWidth: 800,
+                        border: "1px solid #f0f0f0",
+                      }}
+                    >
+                      <thead>
+                        <tr>
+                          {columns.map((col: any, idx: number) => {
+                            const clickableFields = [
+                              "name",
+                              "type",
+                              "publish",
+                              "startDateTime",
+                            ];
+                            const isClickable = clickableFields.includes(
+                              col.field
+                            );
+
+                            return (
+                              <ResizableTh
+                                key={col.field}
+                                initialWidth={idx === 0 ? 250 : 150}
+                              >
+                                <div
+                                  onClick={
+                                    isClickable
+                                      ? () => handleSortClick(col.field)
+                                      : undefined
+                                  }
+                                  onMouseEnter={
+                                    isClickable
+                                      ? () => setHoveredField(col.field)
+                                      : undefined
+                                  }
+                                  onMouseLeave={
+                                    isClickable
+                                      ? () => setHoveredField(null)
+                                      : undefined
+                                  }
+                                  className="tableheader"
+                                  style={{
+                                    cursor: isClickable ? "pointer" : "default",
+                                    width: "100%",
+                                  }}
+                                >
+                                  {col.headerName}
+                                  {isClickable && displayField === col.field
+                                    ? sortDirection === "asc"
+                                      ? " ▲"
+                                      : " ▼"
+                                    : ""}
+                                </div>
+                              </ResizableTh>
+                            );
+                          })}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {paginatedRows.map((row: any, idx: number) => (
+                          <tr
+                            key={row.id}
+                            className={getRowClassName({
+                              indexRelativeToCurrentPage: idx,
+                            })}
+                          >
+                            {columns.map((col: any) => (
+                              <td
+                                key={col.field}
+                                style={{
+                                  padding: "10px 12px",
+                                  verticalAlign: "top",
+                                  borderBottom: "1px solid #f0f0f0",
+                                  whiteSpace: "nowrap",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  maxWidth: "100px",
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    whiteSpace: "nowrap",
+                                  }}
+                                >
+                                  {col.renderCell({ row })}
+                                </div>
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                        {displayedRows.length === 0 && (
+                          <tr>
+                            <td
+                              colSpan={columns.length}
+                              style={{
+                                padding: 16,
+                                textAlign: "center",
+                                color: "#666",
+                              }}
+                            >
+                              No rows
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                  {/* Pagination controls */}
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginTop: 8,
+                    }}
+                  >
+                    <div
+                      style={{ display: "flex", gap: 8, alignItems: "center" }}
+                    ></div>
+
+                    <div
+                      style={{ display: "flex", gap: 8, alignItems: "center" }}
+                    >
+                      <label style={{ fontSize: 16, color: "#444" }}>
+                        Rows per page:
+                      </label>
+                      <select
+                        style={{
+                          backgroundColor: "white",
+                          border: "none",
+                          color: "#444",
+                          outline: "none",
+                          boxShadow: "none",
+                        }}
+                        value={pageSizeState === "all" ? "all" : pageSizeState}
+                        onChange={(e) =>
+                          handlePageSizeSelect(
+                            e.target.value === "all"
+                              ? "all"
+                              : parseInt(e.target.value, 10)
+                          )
+                        }
+                      >
+                        <option value={50}>50</option>
+                        <option value={100}>100</option>
+                        <option value="all">All</option>
+                      </select>
+                      <span style={{ fontSize: 16, color: "#444" }}>
+                        {displayedRows.length > 0
+                          ? `${currentPage * effectivePageSize + 1}-${Math.min(
+                              (currentPage + 1) * effectivePageSize,
+                              displayedRows.length
+                            )} of ${displayedRows.length}`
+                          : `0 of 0`}
+                      </span>
+                      <button
+                        style={{
+                          backgroundColor: "white",
+                          color: "#444",
+                          border: "none",
+                        }}
+                        className="btn btn-sm btn-secondary"
+                        onClick={() => handleGotoPage(currentPage - 1)}
+                        disabled={currentPage === 0}
+                      >
+                        {"<"}
+                      </button>
+
+                      <button
+                        style={{
+                          backgroundColor: "white",
+                          color: "#444",
+                          border: "none",
+                        }}
+                        className="btn btn-sm btn-secondary"
+                        onClick={() => handleGotoPage(currentPage + 1)}
+                        disabled={currentPage >= pageCount - 1}
+                      >
+                        {">"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           ) : (
@@ -1259,11 +1576,11 @@ export default function Home({
                   <div
                     className="homeItems"
                     key={item.id}
-                    onClick={() =>
-                      navigate(`/details?id=${item.id}`, {
+                    onClick={() => {
+                      navigate(`/event?id=${item.id}`, {
                         state: { detail: item.id },
-                      })
-                    }
+                      });
+                    }}
                   >
                     <div className="homeChild">
                       <div style={containerStyle}>
@@ -1317,9 +1634,9 @@ export default function Home({
                           wordBreak: "break-word",
                         }}
                       >
-                        {item.nameOrOrganizer_right
-                          ? item.nameOrOrganizer_right
-                          : item.nameOrOrganizer_left}
+                        {[item.nameOrOrganizer_right, item.nameOrOrganizer_left]
+                          .filter(Boolean)
+                          .join(" | ")}
                       </div>
                     )}
                   </div>

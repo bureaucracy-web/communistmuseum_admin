@@ -147,6 +147,38 @@ div:hover .hoverOverlay {
   padding: 0 8px;
   top: 2px;
 }
+.resizable-th {
+  font-weight: normal;
+}
+
+.tableheader {
+  position: relative;
+  min-width: 105px;
+  text-align: left;
+  padding: 11px 12px;
+  cursor: pointer;
+  user-select: none;
+  border-bottom: 1px solid #f1f1f1;
+  font-family: "Courier Prime", monospace !important;
+}
+
+.tableheader::after {
+  content: "";
+  position: absolute;
+  top: 25%;
+  right: 0;
+  height: 50%;
+  border-right: 1px solid #c0c0c0;
+}
+
+.cell-content {
+  display: block;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 @media (max-width: 635px) {
   .shedulesParrent {
     display: grid !important;

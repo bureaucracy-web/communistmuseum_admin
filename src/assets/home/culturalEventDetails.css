@@ -61,6 +61,9 @@ h2 {
   border: 1px solid rgb(189, 185, 185);
   height: 100%;
 }
+.marginAll {
+  margin: 0 15px;
+}
 
 .event-name,
 .event-title {
@@ -68,8 +71,7 @@ h2 {
 }
 
 .hero img {
-  width: 100%;
-  max-height: 400px;
+  max-height: 500px;
   object-fit: cover;
   border-radius: 8px;
   cursor: pointer;
@@ -111,7 +113,7 @@ h2 {
 .info-grid {
   width: 100%;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr !important;
   gap: 16px 32px;
   margin-bottom: 20px;
 }
@@ -119,7 +121,7 @@ h2 {
 .meta-pair-child {
   display: flex;
   width: 100%;
-  align-items: center;
+  /* align-items: center; */
   justify-content: center;
 }
 
@@ -157,10 +159,8 @@ h2 {
 }
 
 .file-card {
-  border: 1px solid #ddd;
   border-radius: 6px;
   padding: 10px;
-  background: #fafafa;
   text-align: center;
   cursor: pointer;
   transition: transform 0.2s;
@@ -178,6 +178,7 @@ h2 {
 
 .file-card .doc-box {
   width: 100%;
+  min-width: 100px;
   height: 100px;
   border: 1px dashed #999;
   display: flex;
@@ -222,7 +223,7 @@ h2 {
   margin-top: 20px;
 }
 .audio audio {
-  width: 135px;
+  width: 100%;
   height: 35px;
 }
 
@@ -234,16 +235,52 @@ h2 {
 .file-card {
   display: flex;
   align-items: center;
+  margin: 10px 0;
 }
 
 .pdfCards {
   max-height: 225px;
+  margin-right: 15px;
+  text-align: center;
 }
 .pdfCards img {
-  max-height: 125px;
+  max-height: 160px;
+}
+.fileCardContent {
+  max-width: 70% !important;
+}
+.lineMargin {
+  margin: 0 15px;
+}
+.externalContext {
+  max-width: 600px;
+}
+.externalContext {
+  width: 100%;
+  overflow: hidden;
 }
 
+.externalContext a {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-decoration: none;
+  color: #007bff;
+}
+.photo-wrapper {
+  cursor: pointer;
+}
+@media (max-width: 1200px) {
+  .externalContext {
+    max-width: 400px;
+  }
+}
 @media (max-width: 991px) {
+  .externalContext {
+    max-width: 100%;
+  }
+
   .rtlSp,
   .ltrSp {
     width: 100% !important;
@@ -259,5 +296,11 @@ h2 {
   }
   .lineBetweenCard {
     display: none;
+  }
+}
+
+@media (max-width: 500px) {
+  .fileCardContent {
+    width: 100%;
   }
 }

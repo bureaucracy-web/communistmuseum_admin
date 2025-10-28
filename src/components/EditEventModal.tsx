@@ -89,7 +89,7 @@ export default function EditEventModal({
   const addSchedule = () => {
     setSchedules((prev) => [
       ...prev,
-      { dayOfWeek: 1, startTime: "09:00", endTime: "17:00" },
+      { dayOfWeek: null, startTime: null, endTime: null },
     ]);
   };
 
@@ -309,6 +309,7 @@ export default function EditEventModal({
                   "video",
                   "audio",
                   "pdf",
+                  "epub",
                   "excel",
                   "word",
                 ];
@@ -325,6 +326,7 @@ export default function EditEventModal({
                 const isVideo = type === "video";
                 const isAudio = type === "audio";
                 const isPdf = type === "pdf";
+                const isEpub = type === "epub";
                 const isExcel = type === "excel";
                 const isWord = type === "word";
 
@@ -368,7 +370,7 @@ export default function EditEventModal({
                     {isAudio && (
                       <audio src={url} style={{ width: "100%" }} controls />
                     )}
-                    {(isPdf || isExcel || isWord) && (
+                    {(isPdf || isEpub || isExcel || isWord) && (
                       <Box
                         display="flex"
                         flexDirection="column"
@@ -446,6 +448,11 @@ export default function EditEventModal({
               const isVideo = file.type.startsWith("video/");
               const isAudio = file.type.startsWith("audio/");
               const isPDF = file.type === "application/pdf";
+              const isEpub =
+                file.type === "application/epub+zip" ||
+                file.name.endsWith(".epub");
+              console.log(isPDF);
+              console.log(isEpub);
 
               return (
                 <Box
@@ -482,6 +489,15 @@ export default function EditEventModal({
                       <span>PDF</span>
                     </div>
                   )}
+
+                  {isEpub && (
+                    <div
+                      style={{ cursor: "pointer" }}
+                      onClick={() => window.open(url, "_blank")}
+                    >
+                      <span>EPUB</span>
+                    </div>
+                  )}
                   <IconButton
                     size="small"
                     onClick={() => removeFile(idx)}
@@ -495,9 +511,14 @@ export default function EditEventModal({
           </Box>
         </Box>
 
-        {files.some((f) => f.type === "application/pdf") && (
+        {files.some(
+          (f) =>
+            f.type === "application/pdf" || f.type === "application/epub+zip"
+        ) && (
           <Box mt={2}>
-            <h4>Upload PDF Image (optional)</h4>
+            <h4>
+              Upload PDF/EPUB Image (optional)
+            </h4>
             <input
               id="pdf-image-upload"
               type="file"
@@ -507,7 +528,7 @@ export default function EditEventModal({
             />
             <label htmlFor="pdf-image-upload">
               <Button variant="outlined" component="span">
-                Select PDF Image
+                Select PDF/EPUB Image
               </Button>
             </label>
             {pdfImage && (
@@ -646,18 +667,31 @@ export default function EditEventModal({
               <TextField
                 label="Start Time"
                 type="time"
-                value={sch.startTime}
+                value={sch.startTime ?? ""}
                 onChange={(e) =>
-                  handleScheduleChange(i, "startTime", e.target.value)
+                  handleScheduleChange(i, "startTime", e.target.value || null)
                 }
+                InputLabelProps={{ shrink: true }}
+                InputProps={{
+                  inputProps: {
+                    placeholder: "--:--",
+                  },
+                }}
               />
+
               <TextField
                 label="End Time"
                 type="time"
-                value={sch.endTime}
+                value={sch.endTime ?? ""}
                 onChange={(e) =>
-                  handleScheduleChange(i, "endTime", e.target.value)
+                  handleScheduleChange(i, "endTime", e.target.value || null)
                 }
+                InputLabelProps={{ shrink: true }}
+                InputProps={{
+                  inputProps: {
+                    placeholder: "--:--",
+                  },
+                }}
               />
               <Button onClick={() => removeSchedule(i)} color="error">
                 X
