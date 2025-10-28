@@ -1226,13 +1226,11 @@ export default function Home({
           <div className="container editMode">
             <div className="row mt-2">
               <div className="col-sm-12">
-                <h2>{selectedMenuItem.name}</h2>
                 <img
                   src={apiEndpointForUrl + selectedMenuItem.image}
                   alt={apiEndpointForUrl + selectedMenuItem.image}
                   style={{
-                    width: "100%",
-                    maxHeight: "400px",
+                    maxHeight: "500px",
                     objectFit: "cover",
                   }}
                 />
