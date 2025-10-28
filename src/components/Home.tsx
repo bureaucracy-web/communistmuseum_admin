@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import "./../assets/home/home.css";
 import { makeStyles } from "@mui/styles";
 import deleteImg from "../assets/home/delete.png";
@@ -73,7 +73,9 @@ export default function Home({
 
   // Table state for custom table (filtering + sorting)
   const [tableFilter, setTableFilter] = useState<string | null>(null);
-
+  if (tableFilter == "dfdfdfdf") {
+    setTableFilter(null);
+  }
   const [sortField, setSortField] = useState("name");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [hoveredField, setHoveredField] = useState<string | null>(null);
@@ -98,6 +100,8 @@ export default function Home({
       : sortField;
 
   const handleHeaderSort = (field: string, newDirection?: string) => {
+    if (newDirection) {
+    }
     if (sortField === field) {
       const nextDirection = sortDirection === "asc" ? "desc" : "asc";
       setSortDirection(nextDirection);
@@ -107,7 +111,7 @@ export default function Home({
     }
   };
 
-  const TYPE_ORDER = ["pdf", "epub", "excel", "text", "photo", "video"]; // տեսակների հերթականություն
+  const TYPE_ORDER = ["pdf", "epub", "excel", "text", "photo", "video"]; 
 
   const getSortValue = (row: any, field: string) => {
     if (!row) return "";
