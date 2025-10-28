@@ -386,6 +386,7 @@ export default function CulturalEventDetails() {
               ) : (
                 ""
               )}
+              
               {event?.title_right && (
                 <span
                   className={
