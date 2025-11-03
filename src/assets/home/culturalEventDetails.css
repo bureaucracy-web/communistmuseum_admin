@@ -303,4 +303,8 @@ h2 {
   .fileCardContent {
     width: 100%;
   }
+
+  .hero img {
+    width: -webkit-fill-available !important;
+  }
 }

@@ -13,7 +13,7 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { Editor } from "@tinymce/tinymce-react";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 type AddEventModalProps = {
   open: boolean;
@@ -104,7 +104,6 @@ export default function AddEventModal({
     setSchedules((prev) => prev.filter((_, i) => i !== index));
 
   const detectFileType = (file: File) => {
- 
     if (file.type.startsWith("image/")) return "photo";
     if (file.type.startsWith("video/")) return "video";
     if (file.type.startsWith("audio/")) return "audio";
@@ -202,6 +201,17 @@ export default function AddEventModal({
     setShowError(false);
     onClose();
   };
+
+  useEffect(() => {
+    if (open) {
+      setFormData(initialFormData);
+      setMediaFiles([]);
+      setPdfImage(null);
+      setSchedules([]);
+      setShowError(false);
+      setLanguages(["en"]);
+    }
+  }, [open]);
 
   const editableFields: (keyof typeof initialFormData)[] = [
     "nameOrOrganizer_left",
