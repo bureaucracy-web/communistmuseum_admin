@@ -344,19 +344,75 @@ export default function AddArtFormFull() {
       body: formPayload,
     })
       .then((res) => res.json())
-      .then(() =>
-        Swal.fire({
-          html: `
+      .then((response) => {
+        console.log(response);
+        if (response.success == false) {
+          Swal.fire({
+            html: `
+    <div style="font-family: Arial, sans-serif; line-height:1.4; max-width:560px; margin:0 auto; text-align:center;">
+      <h3 style="margin-bottom:8px;">Message / رسالة</h3>
+
+      <div style="direction:ltr; text-align:left; margin-bottom:14px;">
+
+       <p style="margin:0 0 8px 0; color:#ff0000;">
+          <strong>${response.data}</strong>
+        </p>
+        
+        <p style="margin:0 0 8px 0;">
+          <strong>Dear Friend,</strong>
+        </p>
+        <p style="margin:0 0 8px 0;">
+          There is a small technical error with the processing of the information regarding your work.
+          Please submit the material to
+          <a href="mailto:art@communistmuseum.org">art@communistmuseum.org</a>
+          and, if possible, include the error message here so we can better understand what went wrong.
+        </p>
+        <p style="margin:0;">
+          Thanks,<br/>
+          <em>Comupa Technical Commoners</em>
+        </p>
+      </div>
+
+      <hr style="border:none; border-top:1px solid #eee; margin:12px 0;">
+
+      <div dir="rtl" lang="ar" style="text-align:right; margin-top:8px;">
+       <p style="margin:0 0 8px 0; color:#ff0000;">
+          <strong>${response.data}</strong>
+        </p>
+        
+        <p style="margin:0 0 8px 0;">
+          <strong>صديقي العزيز،</strong>
+        </p>
+        <p style="margin:0 0 8px 0;">
+          حدث خطأ تقني بسيط أثناء معالجة المعلومات المتعلقة بعملك.
+          يرجى إرسال المواد إلى البريد الإلكتروني:
+          <a href="mailto:art@communistmuseum.org">art@communistmuseum.org</a>
+          وإذا أمكنك، أرفق أيضًا رسالة الخطأ هنا حتى نتمكن من فهم ما حدث بشكل أفضل.
+        </p>
+        <p style="margin:0;">
+          شكرًا لك،<br/>
+          <em>فريق الدعم الفني Comupa Technical Commoners</em>
+        </p>
+      </div>
+    </div>
+  `,
+            icon: "error",
+            confirmButtonColor: "#16285e",
+          }).then(() => handleCancel());
+        } else {
+          Swal.fire({
+            html: `
         <h3 style="text-align:center;">
           <div style="direction:ltr;">The event has been created successfully</div>
           <div style="direction:rtl;"> تم إنشاء الحدث بنجاح.</div>
         </h3>
         <br/>
       `,
-          icon: "success",
-          confirmButtonColor: "#16285e",
-        }).then(() => handleCancel())
-      )
+            icon: "success",
+            confirmButtonColor: "#16285e",
+          }).then(() => handleCancel());
+        }
+      })
       .catch((err) => console.error("Create error:", err));
   };
 

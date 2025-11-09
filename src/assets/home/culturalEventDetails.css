@@ -47,8 +47,6 @@ h2 {
 
 /* Main content shifted */
 .event-main {
-  /* margin-left: 180px; */
-  /* max-width: 1050px; */
   width: 100%;
   margin: 0 13px;
 }
@@ -306,5 +304,8 @@ h2 {
 
   .hero img {
     width: -webkit-fill-available !important;
+  }
+  .event-main {
+    margin: 0px;
   }
 }
