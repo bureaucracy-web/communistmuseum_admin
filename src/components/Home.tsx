@@ -111,7 +111,7 @@ export default function Home({
     }
   };
 
-  const TYPE_ORDER = ["pdf", "epub", "excel", "text", "photo", "video"]; 
+  const TYPE_ORDER = ["pdf", "epub", "excel", "text", "photo", "video"];
 
   const getSortValue = (row: any, field: string) => {
     if (!row) return "";
@@ -683,9 +683,31 @@ export default function Home({
       body: payload,
     })
       .then((res) => res.json())
-      .then(() => {
-        getEventsByNavCategoryId(matchedItemId);
-        setOpenAddModal(false);
+      .then((response) => {
+        if (response.success == false) {
+          Swal.fire({
+            html: `
+           <div style="font-family: Arial, sans-serif; line-height:1.4; max-width:560px; margin:0 auto; text-align:center; position:relative; z-index:999;">
+
+              <h3 style="margin-bottom:8px;">Message / رسالة</h3>
+        
+              <div style="direction:ltr; text-align:left; margin-bottom:14px;">
+        
+               <p style="margin:0 0 8px 0; color:#ff0000;">
+                  <strong>${response.data}</strong>
+                </p>
+                
+              </div>
+        
+            </div>
+          `,
+            icon: "error",
+            confirmButtonColor: "#16285e",
+          }).then(() => setOpenAddModal(false));
+        } else {
+          getEventsByNavCategoryId(matchedItemId);
+          setOpenAddModal(false);
+        }
       })
       .catch((err) => console.error("Create error:", err));
   };

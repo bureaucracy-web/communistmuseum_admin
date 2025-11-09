@@ -88,7 +88,6 @@ export default function CulturalEventDetails() {
       })
       .then((data) => {
         setEvent(data.data);
-        console.log(data.data);
         setPhase(data.data.navigationCategory?.name);
       })
       .catch((err) => console.error("Error fetching events:", err));

@@ -451,8 +451,7 @@ export default function EditEventModal({
               const isEpub =
                 file.type === "application/epub+zip" ||
                 file.name.endsWith(".epub");
-              console.log(isPDF);
-              console.log(isEpub);
+       
 
               return (
                 <Box

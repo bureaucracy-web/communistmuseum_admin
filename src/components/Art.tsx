@@ -345,7 +345,6 @@ export default function AddArtFormFull() {
     })
       .then((res) => res.json())
       .then((response) => {
-        console.log(response);
         if (response.success == false) {
           Swal.fire({
             html: `
@@ -379,7 +378,7 @@ export default function AddArtFormFull() {
        <p style="margin:0 0 8px 0; color:#ff0000;">
           <strong>${response.data}</strong>
         </p>
-        
+
         <p style="margin:0 0 8px 0;">
           <strong>صديقي العزيز،</strong>
         </p>
